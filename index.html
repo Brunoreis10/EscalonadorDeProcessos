@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta http-equiv="X-UA-Compatible" content="ie=edge">
+	<title>Escalonamento - Sistemas Operacionais I</title>
+	<link rel="icon" type="image/png" sizes="16x16" href="/aplicacao/images/icon1.png">
+	<script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+	<link href="https://fonts.googleapis.com/css?family=Roboto:400,400i,700,700i" rel="stylesheet">
+	<link href="aplicacao/scripts/css/lib.min.css" rel="stylesheet" type="text/css"/>
+	<link href="aplicacao/scripts/css/build.min.css" rel="stylesheet" type="text/css"/>
+</head>
+<body>
+
+	<div class="containersch">
+		<div class="scheduler-main">
+
+			<div aria-live="" aria-atomic="true" class="-positionfixedalert">
+				<div class="position-absolute" id="toast-place"></div>
+			</div>
+
+			<div class="row">
+				<div class="col-sm-12 text-center my-5"> <!-- Item card -->
+
+					<h1 class="-h1title">Escalonamento</h1>
+
+					<div class="-blocklistperson">
+						<ul class="-listghperson">
+							<li class="-itempersongit">
+								<a href="https://github.com/Brunoreis10" target="_blank" data-toggle="tooltip" data-placement="bottom" title="Bruno Reis">
+									<i class="fab fa-github -icongithub"></i>
+								</a>
+							</li>
+							<li class="-itempersongit">
+								<a href="https://github.com/Lksmv" target="_blank" data-toggle="tooltip" data-placement="bottom" title="Lucas Miguel Vieira">
+									<i class="fab fa-github -icongithub"></i>
+								</a>
+							</li>
+						</ul>
+					</div>
+
+				</div>
+			</div>
+
+			<div class="row -flexdirectioncards -maringtopnegative">
+				<div class="col-sm-12 col-md-12 col-lg-7"> <!-- Item card -->
+
+					<section class="card -cardscheduler -cardschedulermobile -schscroll shadow-sm bg-white rounded">
+						<div class="card-body">
+							<h3 class="-titlecards card-title text-center mb-4">Fila de Jobs</h3>
+							<ul class="-listjobsqueue table-logs"></ul>
+						</div>
+					</section>
+
+				</div>
+
+				<div class="col-sm-12 col-md-12 col-lg-5"> <!-- Item card -->
+
+					<section class="card -cardscheduler shadow-sm bg-white rounded">
+						<div class="card-body">
+							<h3 class="-titlecards card-title text-center mb-4">Adicionar Jobs a Fila</h3>
+							<div class="my-4">
+								<div class="-subblockcardcenter mb-4">
+									<div class="-blockinputone">
+										<div class="-inputblockseconds mb-4">
+											<p class="-txtinput">Tempo de execução:</p>
+											<input id="schTimeExecution" class="-inputdefault form-control" placeholder="Valor em inteiro"/>
+										</div>
+
+										<div class="-inputblockseconds">
+											<p class="-txtinput">Intervalo de Tempo:</p>
+											<input id="timeSlice" class="-inputdefault form-control" placeholder="Valor em inteiro"/>
+										</div>
+									</div>
+									<button id="createQueue" onclick="createQueue()" class="-buttonadd btn btn-primary">Adicionar</button>
+								</div>
+
+								<div class="my-4">
+									<p class="-txtinput">Selecione a prioridade:</p>
+									<select id="prioritySelect" class="prioritySelect custom-select" name="prioritySelect">
+										<option value="1">Muito baixo</option>
+										<option value="2">Baixo</option>
+										<option value="3" selected>Médio</option>
+										<option value="4">Alto</option>
+										<option value="5">Muito alto</option>
+									</select>
+								</div>
+								
+								<div class="my-4">
+									<p class="-txtinput">Selecione o tipo de Escalonamento:</p>
+									<select id="typeOfProcess" class="typeOfProcess custom-select" name="typeOfProcess">
+										<option value="FIFO" selected>First-In First-Out (FIFO)</option>
+										<option value="RRS">Round Robin Schedule</option>
+										<option value="PRIORITY">Por Prioridade</option>
+									</select>
+								</div>
+								<button onclick="startJobs()" id="startJobs" class="-btninit btn btn-primary ">Iniciar Jobs</button>
+							</div>
+
+							<div class="-subblockcard">
+								<button id="createChart" onclick="createChart()" class="-btndefault btn btn-primary">Montar Gráfico</button>
+								<button id="cleanScheduler" class="-btndefault btn btn-primary">Limpar</button>
+							</div>
+						</div>
+					</section>
+
+				</div>
+			</div>
+
+			<div class="row mb-4">
+				<div class="col-12"> <!-- Item card -->
+
+					<section id="sectionGraphic" class="card -schedulerchart hide my-4 shadow-sm bg-white rounded">
+						<div class="card-body">
+							<h3 class="-titlecards card-title text-center mb-4">Gráfico de tempo de execução dos Jobs</h3>
+							<div id="chartTime" style="height: 300px;"></div>
+						</div>
+					</section>
+
+					<section id="sectionCalculo" class="card -schedulerchart hide shadow-sm bg-white rounded">
+						<div class="card-body">
+							<h3 class="-titlecards card-title text-center mb-4">Cálculo de Tempo</h3>
+							<div id="calculo" class="row">
+								<div class="col-12 col-md-6">
+									<table class="-customcenter table highlight centered responsive-table">
+										<thead class="">
+											<tr>
+												<th scope="col">ID do Job</th>
+												<th scope="col">Tempo de Execução</th>
+												<th scope="col">Tempo de Espera</th>
+											</tr>
+										</thead>
+										<tbody id="tbodyScheduler" class="centered"></tbody>
+									</table>
+								</div>
+								<div class="col-12 col-md-6">
+									<div class="-calcformblock">
+										<div class="-calcformsubblock">
+											<span class="-calcformtitle">Tt =</span>
+											<div class="-calcformvalues">
+												<p class="-pcalcvaluetop totalTimeValues"></p>
+												<p class="-pcalcvaluebottom lengthTime"></p>
+											</div>
+											<span class="-calcformtitle"> = </span>
+											<span class="-calcformtitle -valueresult valueTotal"></span>
+										</div>
+									</div>
+									<div class="-calcformblock">
+										<div class="-calcformsubblock">
+											<span class="-calcformtitle">Tw =</span>
+											<div class="-calcformvalues">
+												<p class="-pcalcvaluetop waitTimeValues"></p>
+												<p class="-pcalcvaluebottom lengthTime"></p>
+											</div>
+											<span class="-calcformtitle"> = </span>
+											<span class="-calcformtitle -valueresult valueWaitTotal"></span>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</section>
+
+				</div>
+			</div>
+
+		</div>
+	</div>
+
+	<script src="aplicacao/scripts/js/lib.min.js"></script>
+	<script src="aplicacao/scripts/js/script.js"></script>
+</body>
+</html>
