@@ -23,7 +23,7 @@
 			<div class="row">
 				<div class="col-sm-12 text-center my-5"> <!-- Item card -->
 
-					<h1 class="-h1title">Escalonamento</h1>
+					<h1 class="-h1title">Escalonador de Processos</h1>
 
 					<div class="-blocklistperson">
 						<ul class="-listghperson">
@@ -48,7 +48,7 @@
 
 					<section class="card -cardscheduler -cardschedulermobile -schscroll shadow-sm bg-white rounded">
 						<div class="card-body">
-							<h3 class="-titlecards card-title text-center mb-4">Fila de Jobs</h3>
+							<h3 class="-titlecards card-title text-center mb-4">Fila de Processos</h3>
 							<ul class="-listjobsqueue table-logs"></ul>
 						</div>
 					</section>
@@ -59,7 +59,7 @@
 
 					<section class="card -cardscheduler shadow-sm bg-white rounded">
 						<div class="card-body">
-							<h3 class="-titlecards card-title text-center mb-4">Adicionar Jobs a Fila</h3>
+							<h3 class="-titlecards card-title text-center mb-4">Adicionar Processos a Fila</h3>
 							<div class="my-4">
 								<div class="-subblockcardcenter mb-4">
 									<div class="-blockinputone">
@@ -73,7 +73,7 @@
 											<input id="timeSlice" class="-inputdefault form-control" placeholder="Valor em inteiro"/>
 										</div>
 									</div>
-									<button id="createQueue" onclick="createQueue()" class="-buttonadd btn btn-primary">Adicionar</button>
+									<button id="createQueue" onclick="criarFila()" class="-buttonadd btn btn-primary">Adicionar</button>
 								</div>
 
 								<div class="my-4">
@@ -90,16 +90,16 @@
 								<div class="my-4">
 									<p class="-txtinput">Selecione o tipo de Escalonamento:</p>
 									<select id="typeOfProcess" class="typeOfProcess custom-select" name="typeOfProcess">
-										<option value="FIFO" selected>First-In First-Out (FIFO)</option>
-										<option value="RRS">Round Robin Schedule</option>
-										<option value="PRIORITY">Por Prioridade</option>
+										<option value="FIFO" selected>Escalonador por First-In First-Out (FIFO)</option>
+										<option value="RRS">Escalonador por Round Robin</option>
+										<option value="PRIORIDADE">Escalonador por Prioridade</option>
 									</select>
 								</div>
-								<button onclick="startJobs()" id="startJobs" class="-btninit btn btn-primary ">Iniciar Jobs</button>
+								<button onclick="iniciarProcessos()" id="startJobs" class="-btninit btn btn-primary ">Iniciar Processos</button>
 							</div>
 
 							<div class="-subblockcard">
-								<button id="createChart" onclick="createChart()" class="-btndefault btn btn-primary">Montar Gráfico</button>
+								<button id="createChart" onclick="criarGrafico()" class="-btndefault btn btn-primary">Montar Gráfico</button>
 								<button id="cleanScheduler" class="-btndefault btn btn-primary">Limpar</button>
 							</div>
 						</div>
@@ -113,7 +113,7 @@
 
 					<section id="sectionGraphic" class="card -schedulerchart hide my-4 shadow-sm bg-white rounded">
 						<div class="card-body">
-							<h3 class="-titlecards card-title text-center mb-4">Gráfico de tempo de execução dos Jobs</h3>
+							<h3 class="-titlecards card-title text-center mb-4">Gráfico de tempo de execução dos Processos</h3>
 							<div id="chartTime" style="height: 300px;"></div>
 						</div>
 					</section>
@@ -126,37 +126,13 @@
 									<table class="-customcenter table highlight centered responsive-table">
 										<thead class="">
 											<tr>
-												<th scope="col">ID do Job</th>
+												<th scope="col">ID do Processo</th>
 												<th scope="col">Tempo de Execução</th>
 												<th scope="col">Tempo de Espera</th>
 											</tr>
 										</thead>
 										<tbody id="tbodyScheduler" class="centered"></tbody>
 									</table>
-								</div>
-								<div class="col-12 col-md-6">
-									<div class="-calcformblock">
-										<div class="-calcformsubblock">
-											<span class="-calcformtitle">Tt =</span>
-											<div class="-calcformvalues">
-												<p class="-pcalcvaluetop totalTimeValues"></p>
-												<p class="-pcalcvaluebottom lengthTime"></p>
-											</div>
-											<span class="-calcformtitle"> = </span>
-											<span class="-calcformtitle -valueresult valueTotal"></span>
-										</div>
-									</div>
-									<div class="-calcformblock">
-										<div class="-calcformsubblock">
-											<span class="-calcformtitle">Tw =</span>
-											<div class="-calcformvalues">
-												<p class="-pcalcvaluetop waitTimeValues"></p>
-												<p class="-pcalcvaluebottom lengthTime"></p>
-											</div>
-											<span class="-calcformtitle"> = </span>
-											<span class="-calcformtitle -valueresult valueWaitTotal"></span>
-										</div>
-									</div>
 								</div>
 							</div>
 						</div>

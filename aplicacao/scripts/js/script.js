@@ -1,43 +1,43 @@
 'use strict';
 
 let id = 1;
-let startTimeJobs;
-let startTime;
-let finishTime;
-let now;
-let jobsToExecute = [];
-let jobsToCalculate = [];
-let chartData = [];
-let timeSlice;
-let messages = {
+let inicioTempoProcesso;
+let tempoInicial;
+let tempoFinal;
+let agora;
+let processosParaExecutar = [];
+let processosParaCalcular = [];
+let grafico = [];
+let intervaloDeTempo;
+let mensagens = {
 	error: {
-		totalTimeExecution: 'Insira um valor válido ao Tempo de Execução',
-		timeSliceEmpty: 'Insira um valor válido ao Intervalo de Tempo',
-		arrayTimesEmpty: 'Execute uma operação para montar o gráfico!',
-		inputsEmpty: 'Adicione Jobs a fila!'
+		vlValidoTempoExecucao: 'Insira um valor válido ao Tempo de Execução',
+		vlValidoIntervaloTempo: 'Insira um valor válido ao Intervalo de Tempo',
+		vlValidaGrafico: 'Execute uma operação para montar o gráfico!',
+		vlValidoFilasAdicionadas: 'Adicione Processos a fila!'
 
 	},
 	alert: {
-		executeJobs: 'Iniciando o escalonamento dos Jobs',
-		restartScheduler: 'Escalonador reiniciado!',
-		graphicMounted: 'Gráfico montado com sucesso!',
-		initExeJobs: 'Iniciando execução dos Jobs'
+		executandoProcessos: 'Iniciando o escalonamento dos Processos',
+		reiniciarEscalonador: 'Escalonador reiniciado!',
+		graficoMontadoSucesso: 'Gráfico montado com sucesso!',
+		iniciandoExecucaoDosProcessos: 'Iniciando execução dos Processos'
 	},
 	color: {
-		success: '-textsuccess',
-		danger: '-texterror',
-		warning: '-textwarnning'
+		sucesso: '-textsuccess',
+		erro: '-texterror',
+		aviso: '-textwarnning'
 	}
 }
 
 //Ao executar o sistema, limpar tudo
-$(document).ready(function() {
+$(document).ready(function () {
 	$('[data-toggle="tooltip"]').tooltip();
-	cleanScheduler();
+	limparEscalonador();
 });
 
 //Funções que imitam construtores de classes
-function JobStruct(jobId, totalClocks, priority) {
+function ProcessoEstrutura(jobId, totalClocks, priority) {
 	this.jobId = jobId;
 	this.totalClocks = totalClocks;
 	this.executed = false;
@@ -45,176 +45,194 @@ function JobStruct(jobId, totalClocks, priority) {
 }
 
 //Funções que imitam construtores de classes
-function TimeExecution(jobId, startTime, finishTime) {
+function TempoExecucao(jobId, startTime, finishTime) {
 	this.jobId = jobId;
 	this.startTime = startTime;
 	this.finishTime = finishTime;
 }
 
-function createQueue() {
-	let schTimeExecution = $('#schTimeExecution').val();
-	let prioritySelect = $('.prioritySelect').val();
-	let exprRegularInt = /([0-9])/.test(schTimeExecution);
+function validarCampoNumerico(numero) {
+	const regex = new RegExp(/^[0-9]{1,}$/);
+	return (regex.test(numero));
+}
 
-	if((schTimeExecution === null) || (schTimeExecution === "") || (!exprRegularInt)) {
-		toast(messages.error.totalTimeExecution, messages.color.danger);
+//Criar fila de processos, validando os campos em tela e adicionaondo nos vetores para serem adicionados em tela.
+function criarFila() {
+	let tempoExecucao = $('#schTimeExecution').val();
+	let prioridadeSelecionada = $('.prioritySelect').val();
+	let intervaloDeTempoInt = $('#timeSlice').val();
+
+
+	let exprRegularIntTempoExecucao = validarCampoNumerico(tempoExecucao);
+	let exprRegularIntIntervaloTempo = validarCampoNumerico(intervaloDeTempoInt);
+
+
+	if ((tempoExecucao === null) || (tempoExecucao === "") || (!exprRegularIntTempoExecucao) || (!exprRegularIntIntervaloTempo)) {
+		executaMensagemTela(mensagens.error.vlValidoTempoExecucao, mensagens.color.erro);
 		return;
 	}
 
-	var newJob =  new JobStruct(id, schTimeExecution, prioritySelect);
-	jobsToExecute.push(newJob);
-	jobsToCalculate.push(newJob);
+	let newJob = new ProcessoEstrutura(id, tempoExecucao, prioridadeSelecionada);
+	processosParaExecutar.push(newJob);
+	processosParaCalcular.push(newJob);
 	id++;
 
+	let image = getImage();
+
 	$('.table-logs').append(`
-		<li class="-itemjob">
-			<i class="fas fa-level-up-alt -arrowjobicon"></i>
-			Job <span class="-numberjob">${newJob.jobId}</span> adicionado a fila
-			<i class="fas fa-minus -minusarrowicon"></i>
-			Total de execução: <span class="-numbersecondjob">${newJob.totalClocks}</span> Hz
-		</li>
+		<div id="divImages" style="display:flex; flex-direction:row; margin-bottom:10px; justify-content:center; align-items:center">
+		<img src=" ` + image + `" id="image" style="margin-right:10px" width=25 height=25>
+			<li class="-itemjob">
+				Processo <span class="-numberjob">${newJob.jobId}</span> adicionado a fila
+				<i class="fas fa-minus -minusarrowicon"></i>
+				Total de execução: <span class="-numbersecondjob">${newJob.totalClocks}</span> Hz
+			</li>
+		</div>
 	`);
 }
 
-function startJobs() {
-	if((jobsToExecute.length <= 0) || (jobsToExecute == null)) {
-		toast(messages.error.inputsEmpty, messages.color.danger);
+//Validar o tipo do processo cadastrado, validar o seu tipo de escalonador (prioridade, Robin Round) e chamar a rotina com base nessa característica.
+function iniciarProcessos() {
+	if ((processosParaExecutar.length <= 0) || (processosParaExecutar == null)) {
+		executaMensagemTela(mensagens.error.vlValidoFilasAdicionadas, mensagens.color.erro);
 		return;
 	}
 
-	timeSlice = $('#timeSlice').val();
-	if((timeSlice === null) || (timeSlice === "")) {
-		toast(messages.error.timeSliceEmpty, messages.color.danger);
+	intervaloDeTempo = $('#timeSlice').val();
+	if ((intervaloDeTempo === null) || (intervaloDeTempo === "")) {
+		executaMensagemTela(mensagens.error.vlValidoIntervaloTempo, mensagens.color.erro);
 		return;
 	}
 
-	disableForm('disable');
-	chartData = [];
-	let typeProgress = $('.typeOfProcess').val();
+	desativarFormulario('disable');
+	grafico = [];
+	let tipoProcesso = $('.typeOfProcess').val();
 
-	toast(messages.alert.executeJobs, messages.color.success);
-	$('.table-logs').append(`<li class="-itemjob"><p>Tipo de Escalonamento escolhido: <span class="-numbersecondjob">${typeProgress}</span></p></li>`);
-	
-	if(typeProgress === "RRS") {
-		jobPreemptivo();
-	} else if(typeProgress === "PRIORITY") {
-		jobsToExecute.sort(comparePriority);
-		jobRoundRobin();
-	} else if(typeProgress === "FIFO") {
-		jobRoundRobin();
+	executaMensagemTela(mensagens.alert.executandoProcessos, mensagens.color.sucesso);
+	$('.table-logs').append(`<li class="-itemjob"><p>Tipo de Escalonamento escolhido: <span class="-numbersecondjob">${tipoProcesso}</span></p></li>`);
+
+	if (tipoProcesso === "RRS") {
+		processoPreemptivo();
+	} else if (tipoProcesso === "PRIORIDADE") {
+		processosParaExecutar.sort(compararPrioridade);
+		processoRoundRobin();
+	} else if (tipoProcesso === "FIFO") {
+		processoRoundRobin();
 	}
 }
 
-function jobPreemptivo() {
-	startTime = new Date().getTime();
-	runPreemptivo(0);
+function processoPreemptivo() {
+	tempoInicial = new Date().getTime();
+	executarPreemptivo(0);
 }
 
-function runPreemptivo(index){
-	if(!verifyJobs()) {
+function executarPreemptivo(index) {
+	//Verifica se têm jobs em execução, caso tenha, continua.
+	if (!verifyJobs()) {
 		return index;
 	}
 
-	if(index >= jobsToExecute.length){
+	if (index >= processosParaExecutar.length) {
 		index = 0;
 	}
-	
-	if(jobsToExecute[index].totalClocks <= 0){
-		runPreemptivo(index + 1);
+
+	if (processosParaExecutar[index].totalClocks <= 0) {
+		executarPreemptivo(index + 1);
 		return index;
 	}
-	
-	if((jobsToExecute[index].totalClocks / timeSlice) > 30){
-		toast(`Sistema encerrou o job ${jobsToExecute[index].jobId} por ser muito grande`, messages.color.danger);
-		jobsToExecute.shift();
-		runPreemptivo(index);
+
+	if ((processosParaExecutar[index].totalClocks / intervaloDeTempo) > 30) {
+		executaMensagemTela(`Sistema encerrou o processo ${processosParaExecutar[index].jobId} por ser muito grande`, mensagens.color.erro);
+		processosParaExecutar.shift();
+		executarPreemptivo(index);
 		return;
 	}
-	
-	startTimeJobs = (new Date().getTime() - startTime) / 1000;
-	
-	setTimeout(function() {
-		jobsToExecute[index].totalClocks = jobsToExecute[index].totalClocks - timeSlice;
-		finishTime = (new Date().getTime() - startTime) / 1000;
-		let jobExecution = new TimeExecution(jobsToExecute[index].jobId, startTimeJobs, finishTime);
-		chartData.push(jobExecution);
-		$('.table-logs').append(`<li class="-itemjob">Job <span class="-numberjob">${jobsToExecute[index].jobId}</span><span class="-startjob">executando</span></li>`);
-		if(jobsToExecute[index].totalClocks <= 0){
-			$('.table-logs').append(`<li class="-itemjob">Job <span class="-numberjob">${jobsToExecute[index].jobId}</span><span class="-stopjob">finalizou</span></li>`);
-			runPreemptivo(index + 1);
+
+	inicioTempoProcesso = (new Date().getTime() - tempoInicial) / 1000;
+
+	setIndexByRunPreemptivo(index);
+}
+
+function setIndexByRunPreemptivo(index) {
+	setTimeout(function () {
+		processosParaExecutar[index].totalClocks = processosParaExecutar[index].totalClocks - intervaloDeTempo;
+		tempoFinal = (new Date().getTime() - tempoInicial) / 1000;
+		let jobExecution = new TempoExecucao(processosParaExecutar[index].jobId, inicioTempoProcesso, tempoFinal);
+		grafico.push(jobExecution);
+		$('.table-logs').append(`<li class="-itemjob">Processo <span class="-numberjob">${processosParaExecutar[index].jobId}</span><span class="-startjob">executando</span></li>`);
+		if (processosParaExecutar[index].totalClocks <= 0) {
+			$('.table-logs').append(`<li class="-itemjob">Processo <span class="-numberjob">${processosParaExecutar[index].jobId}</span><span class="-stopjob">finalizou</span></li>`);
+			executarPreemptivo(index + 1);
 			return index;
 		}
-		runPreemptivo(index + 1);
+		executarPreemptivo(index + 1);
 	}, 1000);
 }
 
 function verifyJobs() {
-	for(var i = 0; i < jobsToExecute.length; i++){
-		if(jobsToExecute[i].totalClocks >= 0){
+	for (var i = 0; i < processosParaExecutar.length; i++) {
+		if (processosParaExecutar[i].totalClocks >= 0) {
 			return true;
 		}
 	}
 	return false;
 }
 
-function jobRoundRobin() {
-	startTime = new Date().getTime();
-	run(0);
+function processoRoundRobin() {
+	tempoInicial = new Date().getTime();
+	executar(0);
 }
 
-function run(index){
-	if(index >= jobsToExecute.length){
+function executar(index) {
+	if (index >= processosParaExecutar.length) {
 		return index;
 	}
 
-	if((jobsToExecute[index].totalClocks / timeSlice) > 30){
-		toast(`Sistema encerrou o job ${jobsToExecute[index].jobId} por ser muito grande`, messages.color.danger);
+	if ((processosParaExecutar[index].totalClocks / intervaloDeTempo) > 30) {
+		executaMensagemTela(`Sistema encerrou o Processo ${processosParaExecutar[index].jobId} por ser muito grande`, mensagens.color.erro);
 		index++;
-		run(index);
+		executar(index);
 		return;
 	}
 
-	startTimeJobs = (new Date().getTime() - startTime ) / 1000;
-	
-	setTimeout(function() {
-		finishTime = (new Date().getTime() - startTime) / 1000;
-		let jobExecution = new TimeExecution(jobsToExecute[index].jobId, startTimeJobs, finishTime);
-		chartData.push(jobExecution);
-		jobsToExecute[index].totalClocks = jobsToExecute[index].totalClocks - timeSlice;
-		$('.table-logs').append(`<li class="-itemjob">Job <span class="-numberjob">${jobsToExecute[index].jobId}</span><span class="-startjob">executando</span></li>`);
-		if(jobsToExecute[index].totalClocks <= 0){
-			$('.table-logs').append(`<li class="-itemjob">Job <span class="-numberjob">${jobsToExecute[index].jobId}</span><span class="-stopjob">finalizou</span></li>`);
-			index++;
-		}
-		run(index);
-	}, 1000);
+	inicioTempoProcesso = (new Date().getTime() - tempoInicial) / 1000;
+
+	index = setIndexByRun(index);
 }
 
-function createChart() {
-	if((chartData.length <= 0)  || (chartData == null)) {
-		toast(messages.error.arrayTimesEmpty, messages.color.danger);
+function setIndexByRun(index) {
+	setTimeout(function () {
+		tempoFinal = (new Date().getTime() - tempoInicial) / 1000;
+		let jobExecution = new TempoExecucao(processosParaExecutar[index].jobId, inicioTempoProcesso, tempoFinal);
+		grafico.push(jobExecution);
+		processosParaExecutar[index].totalClocks = processosParaExecutar[index].totalClocks - intervaloDeTempo;
+		$('.table-logs').append(`<li class="-itemjob">Processo <span class="-numberjob">${processosParaExecutar[index].jobId}</span><span class="-startjob">executando</span></li>`);
+		if (processosParaExecutar[index].totalClocks <= 0) {
+			$('.table-logs').append(`<li class="-itemjob">Processo <span class="-numberjob">${processosParaExecutar[index].jobId}</span><span class="-stopjob">finalizou</span></li>`);
+			index++;
+		}
+		executar(index);
+	}, 1000);
+	return index;
+}
+
+function criarGrafico() {
+	if ((grafico.length <= 0) || (grafico == null)) {
+		executaMensagemTela(mensagens.error.vlValidaGrafico, mensagens.color.erro);
 		return;
 	}
 
 	calculo();
 
 	google.charts.load("current", { packages: ["timeline"] });
-	google.charts.setOnLoadCallback(drawChart);
+	google.charts.setOnLoadCallback(desenharGrafico);
 	$('#createChart').prop('disabled', true);
 	$('#sectionGraphic').show();
 	$('#sectionCalculo').show();
-	toast(messages.alert.graphicMounted, messages.color.success);
+	executaMensagemTela(mensagens.alert.graficoMontadoSucesso, mensagens.color.sucesso);
 }
 
-// function compareTime(jobA, jobB) {
-// 	if (jobA.totalClocks < jobB.totalClocks)
-// 		return -1;
-// 	if (jobA.totalClocks > jobB.totalClocks)
-// 		return 1;
-// 	return 0;
-// }
-
-function comparePriority(jobA, jobB) {
+function compararPrioridade(jobA, jobB) {
 	if (jobA.priority < jobB.priority)
 		return 1;
 	if (jobA.priority > jobB.priority)
@@ -222,37 +240,32 @@ function comparePriority(jobA, jobB) {
 	return 0;
 }
 
-function sleep(milliseconds = 1000) {
-	let now = new Date().getTime();
-	while ( new Date().getTime() < (now + milliseconds) ) {}
-}
-
-function drawChart() {
-    let container = document.getElementById('chartTime');
-    let chart = new google.visualization.Timeline(container);
-    let dataTable = new google.visualization.DataTable();
-    dataTable.addColumn({ type: 'string', id: 'Job' });
-    dataTable.addColumn({ type: 'date', id: 'Start' });
+function desenharGrafico() {
+	let container = document.getElementById('chartTime');
+	let chart = new google.visualization.Timeline(container);
+	let dataTable = new google.visualization.DataTable();
+	dataTable.addColumn({ type: 'string', id: 'Job' });
+	dataTable.addColumn({ type: 'date', id: 'Start' });
 	dataTable.addColumn({ type: 'date', id: 'End' });
 
-	for (let i = 0; i < chartData.length; i++) {
+	for (let i = 0; i < grafico.length; i++) {
 		dataTable.addRow(
 			[
-				'Job ' +  chartData[i].jobId,
-				new Date(0, 0, 0, 0, 0, chartData[i].startTime ),
-				new Date(0, 0, 0, 0, 0, chartData[i].finishTime)
+				'Processo ' + grafico[i].jobId,
+				new Date(0, 0, 0, 0, 0, grafico[i].startTime),
+				new Date(0, 0, 0, 0, 0, grafico[i].finishTime)
 			]
 		);
 	}
 
-    let options = {
-    	timeline: { singleColor: '#007bff' },
+	let options = {
+		timeline: { singleColor: '#007bff' },
 	};
 
-    chart.draw(dataTable, options);
+	chart.draw(dataTable, options);
 }
 
-function toast(msg, txtColor = null) {
+function executaMensagemTela(msg, txtColor = null) {
 	$('#toast-place').append(`
 		<div role="alert" aria-live="assertive" aria-atomic="true" data-autohide="true" class="toast" data-delay="2000">
 			<div class="toast-body ${txtColor}">
@@ -269,65 +282,42 @@ function toast(msg, txtColor = null) {
 		$(e.currentTarget).remove();
 	});
 }
-function calculo(){
-	for(let a = 0; a < jobsToCalculate.length; a++) {
+function calculo() {
+	for (let a = 0; a < processosParaCalcular.length; a++) {
 		$('#calculo table tbody').empty();
-		jobsToCalculate[a].lastTime = 0;
-		jobsToCalculate[a].totalTime = 0;
-		jobsToCalculate[a].waitTime = 0;
-		for(let i = 0; i < chartData.length; i++){
-			if(jobsToCalculate[a].jobId == chartData[i].jobId) {
-				jobsToCalculate[a].totalTime = Math.round(jobsToCalculate[a].totalTime + (chartData[i].finishTime - chartData[i].startTime));
-				jobsToCalculate[a].waitTime = Math.round(jobsToCalculate[a].waitTime + (chartData[i].startTime - jobsToCalculate[a].lastTime));
-				jobsToCalculate[a].lastTime = chartData[i].finishTime;
+		processosParaCalcular[a].lastTime = 0;
+		processosParaCalcular[a].totalTime = 0;
+		processosParaCalcular[a].waitTime = 0;
+		for (let i = 0; i < grafico.length; i++) {
+			if (processosParaCalcular[a].jobId == grafico[i].jobId) {
+				processosParaCalcular[a].totalTime = Math.round(processosParaCalcular[a].totalTime + (grafico[i].finishTime - grafico[i].startTime));
+				processosParaCalcular[a].waitTime = Math.round(processosParaCalcular[a].waitTime + (grafico[i].startTime - processosParaCalcular[a].lastTime));
+				processosParaCalcular[a].lastTime = grafico[i].finishTime;
 			}
 		}
 	}
 
-	drawCalculo();
-	jobsToCalculate = [];
+	desenharCalculoEmTela();
+	processosParaCalcular = [];
 }
-function drawCalculo() {
-	let totalWaitTime = 0;
-	let valuesWaitTime = "";
-	let lengthTime =  jobsToCalculate.length;
-	let totalTime = 0;
-	let valuesTotalTime = "";
-	let valueWaitTotal = 0;
-	let valueTotal = 0;
-	for(let a = 0; a < jobsToCalculate.length; a++) {
+function desenharCalculoEmTela() {
+	for (let a = 0; a < processosParaCalcular.length; a++) {
 		$('#calculo table tbody').append(`
 		<tr>
-			<td>Job ${jobsToCalculate[a].jobId}</td>
-			<td>${jobsToCalculate[a].totalTime}s</td>
-			<td>${jobsToCalculate[a].waitTime}s</td>
+			<td>Processo ${processosParaCalcular[a].jobId}</td>
+			<td>${processosParaCalcular[a].totalTime}s</td>
+			<td>${processosParaCalcular[a].waitTime}s</td>
 		</tr>`);
-		totalWaitTime = totalWaitTime + jobsToCalculate[a].waitTime;
-		totalTime = totalTime + jobsToCalculate[a].totalTime;
-		valuesWaitTime = valuesWaitTime + jobsToCalculate[a].waitTime;
-		valuesTotalTime = valuesTotalTime + jobsToCalculate[a].totalTime;
-		if((lengthTime - 1) != a) {
-			valuesWaitTime = valuesWaitTime + " + " ;
-			valuesTotalTime = valuesTotalTime +  " + ";
-		}
 	}
-	valueTotal = (totalTime/lengthTime).toFixed(3);
-	valueWaitTotal = (totalWaitTime/lengthTime).toFixed(3);
-	$('.totalTimeValues').text(valuesTotalTime);
-	$('.waitTimeValues').text(valuesWaitTime);
-	$('.valueWaitTotal').text(valueWaitTotal + 's');
-	$('.valueTotal').text(valueTotal + 's');
-	$('.lengthTime').text(lengthTime);
-	$('#sectionCalculo').removeClass('hide');
 }
 
-function cleanScheduler() {
-	$('#cleanScheduler').on('click', function() {
+function limparEscalonador() {
+	$('#cleanScheduler').on('click', function () {
 		id = 1;
-		startTimeJobs;
-		jobsToExecute = [];
-		jobsToCalculate = [];
-		chartData = [];
+		inicioTempoProcesso;
+		processosParaExecutar = [];
+		processosParaCalcular = [];
+		grafico = [];
 		$('.table-logs').html("");
 		$('#schTimeExecution').val("");
 		$('#timeSlice').val("");
@@ -335,12 +325,12 @@ function cleanScheduler() {
 		$('#sectionCalculo').hide();
 		$('#chartTime').html("");
 		$('#tbodyScheduler').html("");
-		disableForm('enable');
-		toast(messages.alert.restartScheduler, messages.color.success);
+		desativarFormulario('enable');
+		executaMensagemTela(mensagens.alert.reiniciarEscalonador, mensagens.color.sucesso);
 	});
 }
 
-function disableForm(item) {
+function desativarFormulario(item) {
 	switch (item) {
 		case 'disable':
 			$('#schTimeExecution').prop('disabled', true);
@@ -359,5 +349,28 @@ function disableForm(item) {
 			$('#startJobs').prop('disabled', false);
 			$('#createChart').prop('disabled', false);
 			break;
+	}
+}
+
+function getRandom(max) {
+	return Math.floor(Math.random() * max)
+}
+
+function getImage() {
+	//Sortear número de 0 a 6 para com base neles, jogar em tela o processo com seu ícone aleatório.
+	let random = getRandom(6);
+
+	if (random == 0) {
+		return "aplicacao/images/iconExcel.png";
+	} else if (random == 1) {
+		return "aplicacao/images/iconOneNote.png";
+	} else if (random == 2) {
+		return "aplicacao/images/iconPowerPoint.png";
+	} else if (random == 3) {
+		return "aplicacao/images/iconWord.png";
+	} else if (random == 4) {
+		return "aplicacao/images/iconSteam.png";
+	} else if (random == 5) {
+		return "aplicacao/images/iconDiscord.png";
 	}
 }
