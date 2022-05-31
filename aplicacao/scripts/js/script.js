@@ -154,7 +154,7 @@ function executarPreemptivo(index) {
 }
 
 function setIndexByRunPreemptivo(index) {
-	setTimeout(function () {
+	setTimeout(() => {
 		processosParaExecutar[index].totalClocks = processosParaExecutar[index].totalClocks - intervaloDeTempo;
 		tempoFinal = (new Date().getTime() - tempoInicial) / 1000;
 		let jobExecution = new TempoExecucao(processosParaExecutar[index].jobId, inicioTempoProcesso, tempoFinal);
@@ -201,7 +201,7 @@ function executar(index) {
 }
 
 function setIndexByRun(index) {
-	setTimeout(function () {
+	setTimeout(() => {
 		tempoFinal = (new Date().getTime() - tempoInicial) / 1000;
 		let jobExecution = new TempoExecucao(processosParaExecutar[index].jobId, inicioTempoProcesso, tempoFinal);
 		grafico.push(jobExecution);

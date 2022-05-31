@@ -466,13 +466,8 @@ textarea {
 }
 
 .scheduler-main .-buttonadd {
-    width: 100%
-}
-
-@media only screen and (min-width:576px) {
-    .scheduler-main .-buttonadd {
-        width: 185px
-    }
+    width: 100%;
+    margin-bottom: 20px;
 }
 
 .scheduler-main .-btninit {
@@ -641,11 +636,12 @@ textarea {
     width: 100%
 }
 
-@media only screen and (min-width:576px) {
-    .scheduler-main .-cardscheduler .-blockinputone {
-        margin-right: 20px;
-        width: 50%
-    }
+.-blockinputone {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    height: 60px;
+    margin-top: 15px;
 }
 
 .scheduler-main .-cardscheduler .-subblockcardcenter {
@@ -664,7 +660,10 @@ textarea {
 .scheduler-main .-cardscheduler .-inputblockseconds {
     flex: 1;
     max-width: 100%;
-    margin-bottom: 1.5rem
+}
+
+.-inputblockseconds.mb-4, -inputblockseconds {
+    margin: 0px;
 }
 
 @media only screen and (min-width:576px) {

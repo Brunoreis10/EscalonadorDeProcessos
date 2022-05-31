@@ -23,7 +23,7 @@
 			<div class="row">
 				<div class="col-sm-12 text-center my-5"> <!-- Item card -->
 
-					<h1 class="-h1title">Escalonador de Processos</h1>
+					<h1 class="-h1title">Simulador de Escalonador de Processos</h1>
 
 					<div class="-blocklistperson">
 						<ul class="-listghperson">
@@ -44,17 +44,6 @@
 			</div>
 
 			<div class="row -flexdirectioncards -maringtopnegative">
-				<div class="col-sm-12 col-md-12 col-lg-7"> <!-- Item card -->
-
-					<section class="card -cardscheduler -cardschedulermobile -schscroll shadow-sm bg-white rounded">
-						<div class="card-body">
-							<h3 class="-titlecards card-title text-center mb-4">Fila de Processos</h3>
-							<ul class="-listjobsqueue table-logs"></ul>
-						</div>
-					</section>
-
-				</div>
-
 				<div class="col-sm-12 col-md-12 col-lg-5"> <!-- Item card -->
 
 					<section class="card -cardscheduler shadow-sm bg-white rounded">
@@ -73,7 +62,7 @@
 											<input id="timeSlice" class="-inputdefault form-control" placeholder="Valor em inteiro"/>
 										</div>
 									</div>
-									<button id="createQueue" onclick="criarFila()" class="-buttonadd btn btn-primary">Adicionar</button>
+									<!-- <button id="createQueue" onclick="criarFila()" class="-buttonadd btn btn-primary">Adicionar</button> -->
 								</div>
 
 								<div class="my-4">
@@ -95,6 +84,7 @@
 										<option value="PRIORIDADE">Escalonador por Prioridade</option>
 									</select>
 								</div>
+								<button id="createQueue" onclick="criarFila()" class="-buttonadd btn btn-primary">Adicionar</button>
 								<button onclick="iniciarProcessos()" id="startJobs" class="-btninit btn btn-primary ">Iniciar Processos</button>
 							</div>
 
@@ -102,6 +92,18 @@
 								<button id="createChart" onclick="criarGrafico()" class="-btndefault btn btn-primary">Montar Gráfico</button>
 								<button id="cleanScheduler" class="-btndefault btn btn-primary">Limpar</button>
 							</div>
+							<br>
+						</div>
+					</section>
+
+				</div>
+
+				<div class="col-sm-12 col-md-12 col-lg-7"> <!-- Item card -->
+
+					<section class="card -cardscheduler -cardschedulermobile -schscroll shadow-sm bg-white rounded">
+						<div class="card-body">
+							<h3 class="-titlecards card-title text-center mb-4">Fila de Processos</h3>
+							<ul class="-listjobsqueue table-logs"></ul>
 						</div>
 					</section>
 
