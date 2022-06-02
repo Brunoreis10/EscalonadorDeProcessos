@@ -62,7 +62,17 @@
 											<input id="timeSlice" class="-inputdefault form-control" placeholder="Valor em inteiro"/>
 										</div>
 									</div>
-									<!-- <button id="createQueue" onclick="criarFila()" class="-buttonadd btn btn-primary">Adicionar</button> -->
+								</div>
+
+								<div class="my-4">
+									<p class="-txtinput">Selecione o número da prioridade:</p>
+									<select id="priorityNumber" class="priorityNumber custom-select" name="priorityNumber">
+										<option value="1">1 (Muito baixo)</option>
+										<option value="2">2 (Baixo)</option>
+										<option value="3" selected>3 (Médio)</option>
+										<option value="4">4 (Alto)</option>
+										<option value="5">5 (Muito alto)</option>
+									</select>
 								</div>
 
 								<div class="my-4">
@@ -81,7 +91,9 @@
 									<select id="typeOfProcess" class="typeOfProcess custom-select" name="typeOfProcess">
 										<option value="FIFO" selected>Escalonador por First-In First-Out (FIFO)</option>
 										<option value="RRS">Escalonador por Round Robin</option>
+										<option value="SJF">Escalonador por Shortest-Job-First – SJF</option>
 										<option value="PRIORIDADE">Escalonador por Prioridade</option>
+										<option value="TEMPOREAL">Escalonador por Tempo Real</option>
 									</select>
 								</div>
 								<button id="createQueue" onclick="criarFila()" class="-buttonadd btn btn-primary">Adicionar</button>

@@ -37,18 +37,19 @@ $(document).ready(function () {
 });
 
 //Funções que imitam construtores de classes
-function ProcessoEstrutura(jobId, totalClocks, priority) {
-	this.jobId = jobId;
+function ProcessoEstrutura(idProcesso, totalClocks, prioridade, numeroPrioridade) {
+	this.idProcesso = idProcesso;
 	this.totalClocks = totalClocks;
-	this.executed = false;
-	this.priority = priority;
+	this.executado = false;
+	this.prioridade = prioridade;
+	this.numeroPrioridade = numeroPrioridade
 }
 
 //Funções que imitam construtores de classes
-function TempoExecucao(jobId, startTime, finishTime) {
-	this.jobId = jobId;
-	this.startTime = startTime;
-	this.finishTime = finishTime;
+function TempoExecucao(idProcesso, tempoInicial, tempoFinal) {
+	this.idProcesso = idProcesso;
+	this.tempoInicial = tempoInicial;
+	this.tempoFinal = tempoFinal;
 }
 
 function validarCampoNumerico(numero) {
@@ -60,35 +61,55 @@ function validarCampoNumerico(numero) {
 function criarFila() {
 	let tempoExecucao = $('#schTimeExecution').val();
 	let prioridadeSelecionada = $('.prioritySelect').val();
-	let intervaloDeTempoInt = $('#timeSlice').val();
+	let intervaloDeTempo = $('#timeSlice').val();
+	let numeroPrioridade = $('.priorityNumber').val();
 
 
-	let exprRegularIntTempoExecucao = validarCampoNumerico(tempoExecucao);
-	let exprRegularIntIntervaloTempo = validarCampoNumerico(intervaloDeTempoInt);
+	let exprRegularTempoExecucao = validarCampoNumerico(tempoExecucao);
+	let exprRegularIntervaloTempo = validarCampoNumerico(intervaloDeTempo);
 
 
-	if ((tempoExecucao === null) || (tempoExecucao === "") || (!exprRegularIntTempoExecucao) || (!exprRegularIntIntervaloTempo)) {
+	if ((tempoExecucao === null) || (tempoExecucao === "") || (!exprRegularTempoExecucao) || (!exprRegularIntervaloTempo)) {
 		executaMensagemTela(mensagens.error.vlValidoTempoExecucao, mensagens.color.erro);
 		return;
 	}
 
-	let newJob = new ProcessoEstrutura(id, tempoExecucao, prioridadeSelecionada);
-	processosParaExecutar.push(newJob);
-	processosParaCalcular.push(newJob);
+	let novoProcesso = new ProcessoEstrutura(id, tempoExecucao, prioridadeSelecionada, numeroPrioridade);
+	processosParaExecutar.push(novoProcesso);
+	processosParaCalcular.push(novoProcesso);
 	id++;
 
-	let image = getImage();
+	let imagem = getImagem();
 
 	$('.table-logs').append(`
 		<div id="divImages" style="display:flex; flex-direction:row; margin-bottom:10px; justify-content:center; align-items:center">
-		<img src=" ` + image + `" id="image" style="margin-right:10px" width=25 height=25>
+		<img src=" ` + imagem + `" id="image" style="margin-right:10px" width=25 height=25>
 			<li class="-itemjob">
-				Processo <span class="-numberjob">${newJob.jobId}</span> adicionado a fila
+				Processo <span class="-numberjob">${novoProcesso.idProcesso}</span> adicionado a fila
 				<i class="fas fa-minus -minusarrowicon"></i>
-				Total de execução: <span class="-numbersecondjob">${newJob.totalClocks}</span> Hz
+				Total de execução: <span class="-numbersecondjob">${novoProcesso.totalClocks}</span> Hz
 			</li>
 		</div>
 	`);
+}
+
+function getImage() {
+	//Sortear número de 0 a 6 para com base neles, jogar em tela o processo com seu ícone aleatório.
+	let random = getRandom(6);
+
+	if (random == 0) {
+		return "aplicacao/images/iconExcel.png";
+	} else if (random == 1) {
+		return "aplicacao/images/iconOneNote.png";
+	} else if (random == 2) {
+		return "aplicacao/images/iconPowerPoint.png";
+	} else if (random == 3) {
+		return "aplicacao/images/iconWord.png";
+	} else if (random == 4) {
+		return "aplicacao/images/iconSteam.png";
+	} else if (random == 5) {
+		return "aplicacao/images/iconDiscord.png";
+	}
 }
 
 //Validar o tipo do processo cadastrado, validar o seu tipo de escalonador (prioridade, Robin Round) e chamar a rotina com base nessa característica.
@@ -112,23 +133,29 @@ function iniciarProcessos() {
 	$('.table-logs').append(`<li class="-itemjob"><p>Tipo de Escalonamento escolhido: <span class="-numbersecondjob">${tipoProcesso}</span></p></li>`);
 
 	if (tipoProcesso === "RRS") {
-		processoPreemptivo();
+		processoRoundRobin();
 	} else if (tipoProcesso === "PRIORIDADE") {
 		processosParaExecutar.sort(compararPrioridade);
-		processoRoundRobin();
+		processoPrioridade();
 	} else if (tipoProcesso === "FIFO") {
-		processoRoundRobin();
+		processoFIFO();
+	} else if (tipoProcesso === "TEMPOREAL") {
+		processosParaExecutar.sort(compararPrioridade);
+		processoTempoReal();
+	} else if (tipoProcesso === "SJF") {
+		processosParaExecutar.sort(compararTempo);
+		processoSJF();
 	}
 }
 
-function processoPreemptivo() {
+function processoRoundRobin() {
 	tempoInicial = new Date().getTime();
-	executarPreemptivo(0);
+	processoRoundRobinParteDois(0);
 }
 
-function executarPreemptivo(index) {
+function processoRoundRobinParteDois(index) {
 	//Verifica se têm jobs em execução, caso tenha, continua.
-	if (!verifyJobs()) {
+	if (!verificaProcessos()) {
 		return index;
 	}
 
@@ -137,39 +164,35 @@ function executarPreemptivo(index) {
 	}
 
 	if (processosParaExecutar[index].totalClocks <= 0) {
-		executarPreemptivo(index + 1);
+		processoRoundRobinParteDois(index + 1);
 		return index;
 	}
 
 	if ((processosParaExecutar[index].totalClocks / intervaloDeTempo) > 30) {
-		executaMensagemTela(`Sistema encerrou o processo ${processosParaExecutar[index].jobId} por ser muito grande`, mensagens.color.erro);
+		executaMensagemTela(`Sistema encerrou o processo ${processosParaExecutar[index].idProcesso} por ser muito grande`, mensagens.color.erro);
 		processosParaExecutar.shift();
-		executarPreemptivo(index);
+		processoRoundRobinParteDois(index);
 		return;
 	}
 
 	inicioTempoProcesso = (new Date().getTime() - tempoInicial) / 1000;
 
-	setIndexByRunPreemptivo(index);
-}
-
-function setIndexByRunPreemptivo(index) {
 	setTimeout(() => {
 		processosParaExecutar[index].totalClocks = processosParaExecutar[index].totalClocks - intervaloDeTempo;
 		tempoFinal = (new Date().getTime() - tempoInicial) / 1000;
-		let jobExecution = new TempoExecucao(processosParaExecutar[index].jobId, inicioTempoProcesso, tempoFinal);
-		grafico.push(jobExecution);
-		$('.table-logs').append(`<li class="-itemjob">Processo <span class="-numberjob">${processosParaExecutar[index].jobId}</span><span class="-startjob">executando</span></li>`);
+		let processoEmExecucao = new TempoExecucao(processosParaExecutar[index].idProcesso, inicioTempoProcesso, tempoFinal);
+		grafico.push(processoEmExecucao);
+		$('.table-logs').append(`<li class="-itemjob">Processo <span class="-numberjob">${processosParaExecutar[index].idProcesso}</span><span class="-startjob">executando</span></li>`);
 		if (processosParaExecutar[index].totalClocks <= 0) {
-			$('.table-logs').append(`<li class="-itemjob">Processo <span class="-numberjob">${processosParaExecutar[index].jobId}</span><span class="-stopjob">finalizou</span></li>`);
-			executarPreemptivo(index + 1);
+			$('.table-logs').append(`<li class="-itemjob">Processo <span class="-numberjob">${processosParaExecutar[index].idProcesso}</span><span class="-stopjob">finalizou</span></li>`);
+			processoRoundRobinParteDois(index + 1);
 			return index;
 		}
-		executarPreemptivo(index + 1);
+		processoRoundRobinParteDois(index + 1);
 	}, 1000);
 }
 
-function verifyJobs() {
+function verificaProcessos() {
 	for (var i = 0; i < processosParaExecutar.length; i++) {
 		if (processosParaExecutar[i].totalClocks >= 0) {
 			return true;
@@ -178,42 +201,136 @@ function verifyJobs() {
 	return false;
 }
 
-function processoRoundRobin() {
+function processoFIFO() {
 	tempoInicial = new Date().getTime();
-	executar(0);
+	processoFIFOParteDois(0);
 }
 
-function executar(index) {
+function processoFIFOParteDois(index) {
 	if (index >= processosParaExecutar.length) {
 		return index;
 	}
 
 	if ((processosParaExecutar[index].totalClocks / intervaloDeTempo) > 30) {
-		executaMensagemTela(`Sistema encerrou o Processo ${processosParaExecutar[index].jobId} por ser muito grande`, mensagens.color.erro);
+		executaMensagemTela(`Sistema encerrou o Processo ${processosParaExecutar[index].idProcesso} por ser muito grande`, mensagens.color.erro);
 		index++;
-		executar(index);
+		processoFIFOParteDois(index);
 		return;
 	}
 
 	inicioTempoProcesso = (new Date().getTime() - tempoInicial) / 1000;
 
-	index = setIndexByRun(index);
-}
-
-function setIndexByRun(index) {
 	setTimeout(() => {
 		tempoFinal = (new Date().getTime() - tempoInicial) / 1000;
-		let jobExecution = new TempoExecucao(processosParaExecutar[index].jobId, inicioTempoProcesso, tempoFinal);
-		grafico.push(jobExecution);
+		let processoEmExecucao = new TempoExecucao(processosParaExecutar[index].idProcesso, inicioTempoProcesso, tempoFinal);
+		grafico.push(processoEmExecucao);
 		processosParaExecutar[index].totalClocks = processosParaExecutar[index].totalClocks - intervaloDeTempo;
-		$('.table-logs').append(`<li class="-itemjob">Processo <span class="-numberjob">${processosParaExecutar[index].jobId}</span><span class="-startjob">executando</span></li>`);
+		$('.table-logs').append(`<li class="-itemjob">Processo <span class="-numberjob">${processosParaExecutar[index].idProcesso}</span><span class="-startjob">executando</span></li>`);
 		if (processosParaExecutar[index].totalClocks <= 0) {
-			$('.table-logs').append(`<li class="-itemjob">Processo <span class="-numberjob">${processosParaExecutar[index].jobId}</span><span class="-stopjob">finalizou</span></li>`);
+			$('.table-logs').append(`<li class="-itemjob">Processo <span class="-numberjob">${processosParaExecutar[index].idProcesso}</span><span class="-stopjob">finalizou</span></li>`);
 			index++;
 		}
-		executar(index);
+		processoFIFOParteDois(index);
 	}, 1000);
-	return index;
+}
+
+function processoTempoReal() {
+	tempoInicial = new Date().getTime();
+	processoTempoRealParte2(0);
+}
+
+function processoTempoRealParte2(index) {
+	if (index >= processosParaExecutar.length) {
+		return index;
+	}
+
+	if ((processosParaExecutar[index].totalClocks / intervaloDeTempo) > 30) {
+		executaMensagemTela(`Sistema encerrou o Processo ${processosParaExecutar[index].idProcesso} por ser muito grande`, mensagens.color.erro);
+		index++;
+		processoTempoRealParte2(index);
+		return;
+	}
+
+	inicioTempoProcesso = (new Date().getTime() - tempoInicial) / 1000;
+
+	setTimeout(() => {
+		tempoFinal = (new Date().getTime() - tempoInicial) / 1000;
+		let processoEmExecucao = new TempoExecucao(processosParaExecutar[index].idProcesso, inicioTempoProcesso, tempoFinal);
+		grafico.push(processoEmExecucao);
+		processosParaExecutar[index].totalClocks = processosParaExecutar[index].totalClocks - intervaloDeTempo;
+		$('.table-logs').append(`<li class="-itemjob">Processo <span class="-numberjob">${processosParaExecutar[index].idProcesso}</span><span class="-startjob">executando</span></li>`);
+		if (processosParaExecutar[index].totalClocks <= 0) {
+			$('.table-logs').append(`<li class="-itemjob">Processo <span class="-numberjob">${processosParaExecutar[index].idProcesso}</span><span class="-stopjob">finalizou</span></li>`);
+			index++;
+		}
+		processoTempoRealParte2(index);
+	}, 1000);
+}
+
+function processoSJF() {
+	tempoInicial = new Date().getTime();
+	processoSJFParte2(0);
+}
+
+function processoSJFParte2(index) {
+	if (index >= processosParaExecutar.length) {
+		return index;
+	}
+
+	if ((processosParaExecutar[index].totalClocks / intervaloDeTempo) > 30) {
+		executaMensagemTela(`Sistema encerrou o Processo ${processosParaExecutar[index].idProcesso} por ser muito grande`, mensagens.color.erro);
+		index++;
+		processoSJFParte2(index);
+		return;
+	}
+
+	inicioTempoProcesso = (new Date().getTime() - tempoInicial) / 1000;
+
+	setTimeout(() => {
+		tempoFinal = (new Date().getTime() - tempoInicial) / 1000;
+		let processoEmExecucao = new TempoExecucao(processosParaExecutar[index].idProcesso, inicioTempoProcesso, tempoFinal);
+		grafico.push(processoEmExecucao);
+		processosParaExecutar[index].totalClocks = processosParaExecutar[index].totalClocks - intervaloDeTempo;
+		$('.table-logs').append(`<li class="-itemjob">Processo <span class="-numberjob">${processosParaExecutar[index].idProcesso}</span><span class="-startjob">executando</span></li>`);
+		if (processosParaExecutar[index].totalClocks <= 0) {
+			$('.table-logs').append(`<li class="-itemjob">Processo <span class="-numberjob">${processosParaExecutar[index].idProcesso}</span><span class="-stopjob">finalizou</span></li>`);
+			index++;
+		}
+		processoSJFParte2(index);
+	}, 1000);
+}
+
+function processoPrioridade() {
+	tempoInicial = new Date().getTime();
+	processoPrioridadeParte2(0);
+}
+
+function processoPrioridadeParte2(index) {
+	if (index >= processosParaExecutar.length) {
+		return index;
+	}
+
+	if ((processosParaExecutar[index].totalClocks / intervaloDeTempo) > 30) {
+		executaMensagemTela(`Sistema encerrou o Processo ${processosParaExecutar[index].idProcesso} por ser muito grande`, mensagens.color.erro);
+		index++;
+		processoPrioridadeParte2(index);
+		return;
+	}
+
+	inicioTempoProcesso = (new Date().getTime() - tempoInicial) / 1000;
+
+	setTimeout(() => {
+		tempoFinal = (new Date().getTime() - tempoInicial) / 1000;
+		let processoEmExecucao = new TempoExecucao(processosParaExecutar[index].idProcesso, inicioTempoProcesso, tempoFinal);
+		grafico.push(processoEmExecucao);
+		processosParaExecutar[index].totalClocks = processosParaExecutar[index].totalClocks - intervaloDeTempo;
+		$('.table-logs').append(`<li class="-itemjob">Processo <span class="-numberjob">${processosParaExecutar[index].idProcesso}</span><span class="-startjob">executando</span></li>`);
+		if (processosParaExecutar[index].totalClocks <= 0) {
+			$('.table-logs').append(`<li class="-itemjob">Processo <span class="-numberjob">${processosParaExecutar[index].idProcesso}</span><span class="-stopjob">finalizou</span></li>`);
+			index++;
+		}
+		processoPrioridadeParte2(index);
+	}, 1000);
 }
 
 function criarGrafico() {
@@ -232,11 +349,19 @@ function criarGrafico() {
 	executaMensagemTela(mensagens.alert.graficoMontadoSucesso, mensagens.color.sucesso);
 }
 
-function compararPrioridade(jobA, jobB) {
-	if (jobA.priority < jobB.priority)
+function compararPrioridade(processoA, processoB) {
+	if (processoA.prioridade < processoB.prioridade)
 		return 1;
-	if (jobA.priority > jobB.priority)
+	if (processoA.prioridade > processoB.prioridade)
 		return -1;
+	return 0;
+}
+
+function compararTempo(processoA, processoB) {
+	if (processoA.totalClocks < processoB.totalClocks)
+		return -1;
+	if (processoA.totalClocks > processoB.totalClocks)
+		return 1;
 	return 0;
 }
 
@@ -251,9 +376,9 @@ function desenharGrafico() {
 	for (let i = 0; i < grafico.length; i++) {
 		dataTable.addRow(
 			[
-				'Processo ' + grafico[i].jobId,
-				new Date(0, 0, 0, 0, 0, grafico[i].startTime),
-				new Date(0, 0, 0, 0, 0, grafico[i].finishTime)
+				'Processo ' + grafico[i].idProcesso,
+				new Date(0, 0, 0, 0, 0, grafico[i].tempoInicial),
+				new Date(0, 0, 0, 0, 0, grafico[i].tempoFinal)
 			]
 		);
 	}
@@ -264,7 +389,6 @@ function desenharGrafico() {
 
 	chart.draw(dataTable, options);
 }
-
 function executaMensagemTela(msg, txtColor = null) {
 	$('#toast-place').append(`
 		<div role="alert" aria-live="assertive" aria-atomic="true" data-autohide="true" class="toast" data-delay="2000">
@@ -285,14 +409,14 @@ function executaMensagemTela(msg, txtColor = null) {
 function calculo() {
 	for (let a = 0; a < processosParaCalcular.length; a++) {
 		$('#calculo table tbody').empty();
-		processosParaCalcular[a].lastTime = 0;
-		processosParaCalcular[a].totalTime = 0;
-		processosParaCalcular[a].waitTime = 0;
+		processosParaCalcular[a].ultimoTempo = 0;
+		processosParaCalcular[a].tempoTotal = 0;
+		processosParaCalcular[a].tempoEspera = 0;
 		for (let i = 0; i < grafico.length; i++) {
-			if (processosParaCalcular[a].jobId == grafico[i].jobId) {
-				processosParaCalcular[a].totalTime = Math.round(processosParaCalcular[a].totalTime + (grafico[i].finishTime - grafico[i].startTime));
-				processosParaCalcular[a].waitTime = Math.round(processosParaCalcular[a].waitTime + (grafico[i].startTime - processosParaCalcular[a].lastTime));
-				processosParaCalcular[a].lastTime = grafico[i].finishTime;
+			if (processosParaCalcular[a].idProcesso == grafico[i].idProcesso) {
+				processosParaCalcular[a].tempoTotal = Math.round(processosParaCalcular[a].tempoTotal + (grafico[i].tempoFinal - grafico[i].tempoInicial));
+				processosParaCalcular[a].tempoEspera = Math.round(processosParaCalcular[a].tempoEspera + (grafico[i].tempoInicial - processosParaCalcular[a].ultimoTempo));
+				processosParaCalcular[a].ultimoTempo = grafico[i].tempoFinal;
 			}
 		}
 	}
@@ -300,13 +424,14 @@ function calculo() {
 	desenharCalculoEmTela();
 	processosParaCalcular = [];
 }
+
 function desenharCalculoEmTela() {
 	for (let a = 0; a < processosParaCalcular.length; a++) {
 		$('#calculo table tbody').append(`
 		<tr>
-			<td>Processo ${processosParaCalcular[a].jobId}</td>
-			<td>${processosParaCalcular[a].totalTime}s</td>
-			<td>${processosParaCalcular[a].waitTime}s</td>
+			<td>Processo ${processosParaCalcular[a].idProcesso}</td>
+			<td>${processosParaCalcular[a].tempoTotal}s</td>
+			<td>${processosParaCalcular[a].tempoEspera}s</td>
 		</tr>`);
 	}
 }
@@ -356,7 +481,7 @@ function getRandom(max) {
 	return Math.floor(Math.random() * max)
 }
 
-function getImage() {
+function getImagem() {
 	//Sortear número de 0 a 6 para com base neles, jogar em tela o processo com seu ícone aleatório.
 	let random = getRandom(6);
 
