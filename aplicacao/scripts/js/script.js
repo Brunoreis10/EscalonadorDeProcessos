@@ -43,12 +43,11 @@ $(document).ready(function () {
 });
 
 //Funções que imitam construtores de classes
-function ProcessoEstrutura(idProcesso, totalClocks, prioridade, numeroPrioridade) {
+function ProcessoEstrutura(idProcesso, totalClocks, prioridade) {
 	this.idProcesso = idProcesso;
 	this.totalClocks = totalClocks;
 	this.executado = false;
 	this.prioridade = prioridade;
-	this.numeroPrioridade = numeroPrioridade
 }
 
 //Funções que imitam construtores de classes
@@ -68,7 +67,6 @@ function criarFila() {
 	let tempoExecucao = $('#schTimeExecution').val();
 	let prioridadeSelecionada = $('.prioritySelect').val();
 	let intervaloDeTempo = $('#timeSlice').val();
-	let numeroPrioridade = $('.priorityNumber').val();
 
 
 	let exprRegularTempoExecucao = validarCampoNumerico(tempoExecucao);
@@ -80,7 +78,7 @@ function criarFila() {
 		return;
 	}
 
-	let novoProcesso = new ProcessoEstrutura(id, tempoExecucao, prioridadeSelecionada, numeroPrioridade);
+	let novoProcesso = new ProcessoEstrutura(id, tempoExecucao, prioridadeSelecionada);
 	processosParaExecutar.push(novoProcesso);
 	processosParaCalcular.push(novoProcesso);
 	id++;
@@ -335,7 +333,7 @@ function processoPrioridadeParte2(index) {
 	inicioTempoProcesso = (new Date().getTime() - tempoInicial) / 1000;
 
 	setTimeout(() => {
-		if (processosParaExecutar[index].numeroPrioridade == "MUITOALTA") {
+		if (processosParaExecutar[index].prioridade == "5") {
 			if (contadorMuitoAlta == 5) {
 				contadorMuitoAlta = 0;
 				index++;
@@ -343,7 +341,7 @@ function processoPrioridadeParte2(index) {
 				return processoPrioridadeParte2(index);
 			}
 			contadorMuitoAlta++;
-		} else if (processosParaExecutar[index].numeroPrioridade == "ALTA") {
+		} else if (processosParaExecutar[index].prioridade == "4") {
 			if (contadorAlta == 4) {
 				contadorAlta = 0;
 				index++;
@@ -351,7 +349,7 @@ function processoPrioridadeParte2(index) {
 				return processoPrioridadeParte2(index);
 			}
 			contadorAlta++;
-		} else if (processosParaExecutar[index].numeroPrioridade == "MEDIA") {
+		} else if (processosParaExecutar[index].prioridade == "3") {
 			if (contadorMedia == 3) {
 				contadorMedia = 0;
 				index++;
@@ -359,7 +357,7 @@ function processoPrioridadeParte2(index) {
 				return processoPrioridadeParte2(index);
 			}
 			contadorMedia++;
-		} else if (processosParaExecutar[index].numeroPrioridade == "BAIXA") {
+		} else if (processosParaExecutar[index].prioridade == "2") {
 			if (contadorBaixa == 2) {
 				contadorBaixa = 0;
 				index++;
@@ -367,7 +365,7 @@ function processoPrioridadeParte2(index) {
 				return processoPrioridadeParte2(index);
 			}
 			contadorBaixa++;
-		} else if (processosParaExecutar[index].numeroPrioridade == "MUITOBAIXA") {
+		} else if (processosParaExecutar[index].prioridade == "1") {
 			if (contadorMuitoBaixa == 1) {
 				contadorMuitoBaixa = 0;
 				index++;
