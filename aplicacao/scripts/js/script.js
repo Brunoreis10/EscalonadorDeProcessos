@@ -7,6 +7,7 @@ let tempoFinal;
 let agora;
 let processosParaExecutar = [];
 let processosParaCalcular = [];
+let processosFinalizados = [];
 let grafico = [];
 let intervaloDeTempo;
 let mensagens = {
@@ -29,6 +30,11 @@ let mensagens = {
 		aviso: '-textwarnning'
 	}
 }
+let contadorMuitoAlta = 0;
+let contadorAlta = 0;
+let contadorMedia = 0;
+let contadorBaixa = 0;
+let contadorMuitoBaixa = 0;
 
 //Ao executar o sistema, limpar tudo
 $(document).ready(function () {
@@ -306,8 +312,17 @@ function processoPrioridade() {
 }
 
 function processoPrioridadeParte2(index) {
+
+	if (processosFinalizados.length == processosParaExecutar.length) {
+		return;
+	}
+
 	if (index >= processosParaExecutar.length) {
-		return index;
+		index = 0;
+	}
+
+	if (processosParaExecutar[index].executado) {
+		return processoPrioridadeParte2(index + 1);
 	}
 
 	if ((processosParaExecutar[index].totalClocks / intervaloDeTempo) > 30) {
@@ -320,6 +335,47 @@ function processoPrioridadeParte2(index) {
 	inicioTempoProcesso = (new Date().getTime() - tempoInicial) / 1000;
 
 	setTimeout(() => {
+		if (processosParaExecutar[index].numeroPrioridade == "MUITOALTA") {
+			if (contadorMuitoAlta == 5) {
+				contadorMuitoAlta = 0;
+				index++;
+
+				return processoPrioridadeParte2(index);
+			}
+			contadorMuitoAlta++;
+		} else if (processosParaExecutar[index].numeroPrioridade == "ALTA") {
+			if (contadorAlta == 4) {
+				contadorAlta = 0;
+				index++;
+
+				return processoPrioridadeParte2(index);
+			}
+			contadorAlta++;
+		} else if (processosParaExecutar[index].numeroPrioridade == "MEDIA") {
+			if (contadorMedia == 3) {
+				contadorMedia = 0;
+				index++;
+
+				return processoPrioridadeParte2(index);
+			}
+			contadorMedia++;
+		} else if (processosParaExecutar[index].numeroPrioridade == "BAIXA") {
+			if (contadorBaixa == 2) {
+				contadorBaixa = 0;
+				index++;
+
+				return processoPrioridadeParte2(index);
+			}
+			contadorBaixa++;
+		} else if (processosParaExecutar[index].numeroPrioridade == "MUITOBAIXA") {
+			if (contadorMuitoBaixa == 1) {
+				contadorMuitoBaixa = 0;
+				index++;
+
+				return processoPrioridadeParte2(index);
+			}
+			contadorMuitoBaixa++;
+		}
 		tempoFinal = (new Date().getTime() - tempoInicial) / 1000;
 		let processoEmExecucao = new TempoExecucao(processosParaExecutar[index].idProcesso, inicioTempoProcesso, tempoFinal);
 		grafico.push(processoEmExecucao);
@@ -327,6 +383,8 @@ function processoPrioridadeParte2(index) {
 		$('.table-logs').append(`<li class="-itemjob">Processo <span class="-numberjob">${processosParaExecutar[index].idProcesso}</span><span class="-startjob">executando</span></li>`);
 		if (processosParaExecutar[index].totalClocks <= 0) {
 			$('.table-logs').append(`<li class="-itemjob">Processo <span class="-numberjob">${processosParaExecutar[index].idProcesso}</span><span class="-stopjob">finalizou</span></li>`);
+			processosParaExecutar[index].executado = true;
+			processosFinalizados.push(index);
 			index++;
 		}
 		processoPrioridadeParte2(index);
@@ -442,6 +500,7 @@ function limparEscalonador() {
 		inicioTempoProcesso;
 		processosParaExecutar = [];
 		processosParaCalcular = [];
+		processosFinalizados = [];
 		grafico = [];
 		$('.table-logs').html("");
 		$('#schTimeExecution').val("");
