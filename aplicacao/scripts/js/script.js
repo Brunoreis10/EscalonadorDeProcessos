@@ -500,6 +500,11 @@ function limparEscalonador() {
 		processosParaCalcular = [];
 		processosFinalizados = [];
 		grafico = [];
+		contadorMuitoAlta = 0;
+		contadorAlta = 0;
+		contadorMedia = 0;
+		contadorBaixa = 0;
+		contadorMuitoBaixa = 0;
 		$('.table-logs').html("");
 		$('#schTimeExecution').val("");
 		$('#timeSlice').val("");
