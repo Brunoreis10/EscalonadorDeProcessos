@@ -4,7 +4,6 @@ let id = 1;
 let inicioTempoProcesso;
 let tempoInicial;
 let tempoFinal;
-let agora;
 let processosParaExecutar = [];
 let processosParaCalcular = [];
 let processosFinalizados = [];
@@ -134,7 +133,7 @@ function iniciarProcessos() {
 	let tipoProcesso = $('.typeOfProcess').val();
 
 	executaMensagemTela(mensagens.alert.executandoProcessos, mensagens.color.sucesso);
-	$('.table-logs').append(`<li class="-itemjob"><p>Tipo de Escalonamento escolhido: <span class="-numbersecondjob">${tipoProcesso}</span></p></li>`);
+	$('.table-process-running').append(`<li class="-itemjob"><p>Tipo de Escalonamento escolhido: <span class="-numbersecondjob">${tipoProcesso}</span></p></li>`);
 
 	if (tipoProcesso === "RRS") {
 		processoRoundRobin();
@@ -186,9 +185,9 @@ function processoRoundRobinParteDois(index) {
 		tempoFinal = (new Date().getTime() - tempoInicial) / 1000;
 		let processoEmExecucao = new TempoExecucao(processosParaExecutar[index].idProcesso, inicioTempoProcesso, tempoFinal);
 		grafico.push(processoEmExecucao);
-		$('.table-logs').append(`<li class="-itemjob">Processo <span class="-numberjob">${processosParaExecutar[index].idProcesso}</span><span class="-startjob">executando</span></li>`);
+		$('.table-process-running').append(`<li class="-itemjob">Processo <span class="-numberjob">${processosParaExecutar[index].idProcesso}</span><span class="-startjob">executando</span></li>`);
 		if (processosParaExecutar[index].totalClocks <= 0) {
-			$('.table-logs').append(`<li class="-itemjob">Processo <span class="-numberjob">${processosParaExecutar[index].idProcesso}</span><span class="-stopjob">finalizou</span></li>`);
+			$('.table-process-running').append(`<li class="-itemjob">Processo <span class="-numberjob">${processosParaExecutar[index].idProcesso}</span><span class="-stopjob">finalizou</span></li>`);
 			processoRoundRobinParteDois(index + 1);
 			return index;
 		}
@@ -229,9 +228,9 @@ function processoFIFOParteDois(index) {
 		let processoEmExecucao = new TempoExecucao(processosParaExecutar[index].idProcesso, inicioTempoProcesso, tempoFinal);
 		grafico.push(processoEmExecucao);
 		processosParaExecutar[index].totalClocks = processosParaExecutar[index].totalClocks - intervaloDeTempo;
-		$('.table-logs').append(`<li class="-itemjob">Processo <span class="-numberjob">${processosParaExecutar[index].idProcesso}</span><span class="-startjob">executando</span></li>`);
+		$('.table-process-running').append(`<li class="-itemjob">Processo <span class="-numberjob">${processosParaExecutar[index].idProcesso}</span><span class="-startjob">executando</span></li>`);
 		if (processosParaExecutar[index].totalClocks <= 0) {
-			$('.table-logs').append(`<li class="-itemjob">Processo <span class="-numberjob">${processosParaExecutar[index].idProcesso}</span><span class="-stopjob">finalizou</span></li>`);
+			$('.table-process-running').append(`<li class="-itemjob">Processo <span class="-numberjob">${processosParaExecutar[index].idProcesso}</span><span class="-stopjob">finalizou</span></li>`);
 			index++;
 		}
 		processoFIFOParteDois(index);
@@ -262,9 +261,9 @@ function processoTempoRealParte2(index) {
 		let processoEmExecucao = new TempoExecucao(processosParaExecutar[index].idProcesso, inicioTempoProcesso, tempoFinal);
 		grafico.push(processoEmExecucao);
 		processosParaExecutar[index].totalClocks = processosParaExecutar[index].totalClocks - intervaloDeTempo;
-		$('.table-logs').append(`<li class="-itemjob">Processo <span class="-numberjob">${processosParaExecutar[index].idProcesso}</span><span class="-startjob">executando</span></li>`);
+		$('.table-process-running').append(`<li class="-itemjob">Processo <span class="-numberjob">${processosParaExecutar[index].idProcesso}</span><span class="-startjob">executando</span></li>`);
 		if (processosParaExecutar[index].totalClocks <= 0) {
-			$('.table-logs').append(`<li class="-itemjob">Processo <span class="-numberjob">${processosParaExecutar[index].idProcesso}</span><span class="-stopjob">finalizou</span></li>`);
+			$('.table-process-running').append(`<li class="-itemjob">Processo <span class="-numberjob">${processosParaExecutar[index].idProcesso}</span><span class="-stopjob">finalizou</span></li>`);
 			index++;
 		}
 		processoTempoRealParte2(index);
@@ -295,9 +294,9 @@ function processoSJFParte2(index) {
 		let processoEmExecucao = new TempoExecucao(processosParaExecutar[index].idProcesso, inicioTempoProcesso, tempoFinal);
 		grafico.push(processoEmExecucao);
 		processosParaExecutar[index].totalClocks = processosParaExecutar[index].totalClocks - intervaloDeTempo;
-		$('.table-logs').append(`<li class="-itemjob">Processo <span class="-numberjob">${processosParaExecutar[index].idProcesso}</span><span class="-startjob">executando</span></li>`);
+		$('.table-process-running').append(`<li class="-itemjob">Processo <span class="-numberjob">${processosParaExecutar[index].idProcesso}</span><span class="-startjob">executando</span></li>`);
 		if (processosParaExecutar[index].totalClocks <= 0) {
-			$('.table-logs').append(`<li class="-itemjob">Processo <span class="-numberjob">${processosParaExecutar[index].idProcesso}</span><span class="-stopjob">finalizou</span></li>`);
+			$('.table-process-running').append(`<li class="-itemjob">Processo <span class="-numberjob">${processosParaExecutar[index].idProcesso}</span><span class="-stopjob">finalizou</span></li>`);
 			index++;
 		}
 		processoSJFParte2(index);
@@ -378,9 +377,9 @@ function processoPrioridadeParte2(index) {
 		let processoEmExecucao = new TempoExecucao(processosParaExecutar[index].idProcesso, inicioTempoProcesso, tempoFinal);
 		grafico.push(processoEmExecucao);
 		processosParaExecutar[index].totalClocks = processosParaExecutar[index].totalClocks - intervaloDeTempo;
-		$('.table-logs').append(`<li class="-itemjob">Processo <span class="-numberjob">${processosParaExecutar[index].idProcesso}</span><span class="-startjob">executando</span></li>`);
+		$('.table-process-running').append(`<li class="-itemjob">Processo <span class="-numberjob">${processosParaExecutar[index].idProcesso}</span><span class="-startjob">executando</span></li>`);
 		if (processosParaExecutar[index].totalClocks <= 0) {
-			$('.table-logs').append(`<li class="-itemjob">Processo <span class="-numberjob">${processosParaExecutar[index].idProcesso}</span><span class="-stopjob">finalizou</span></li>`);
+			$('.table-process-running').append(`<li class="-itemjob">Processo <span class="-numberjob">${processosParaExecutar[index].idProcesso}</span><span class="-stopjob">finalizou</span></li>`);
 			processosParaExecutar[index].executado = true;
 			processosFinalizados.push(index);
 			index++;

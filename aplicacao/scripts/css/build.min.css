@@ -108,7 +108,7 @@ section {
 body {
     color: #24292e;
     background-color: #fefefe;
-    font: 400 16px 'Roboto', sans-serif;
+    font: 16px 'Roboto', sans-serif;
     line-height: 1
 }
 
@@ -176,7 +176,7 @@ audio:not([controls]) {
 }
 
 html {
-    font-size: 100%;
+    font-size: 16px;
     -webkit-text-size-adjust: 100%;
     -ms-text-size-adjust: 100%
 }
@@ -225,7 +225,7 @@ button,
 input,
 select,
 textarea {
-    font-size: 100%;
+    font-size: 16px;
     margin: 0;
     vertical-align: baseline;
     *vertical-align: middle
@@ -428,7 +428,7 @@ textarea {
 }
 
 .scheduler-main .-h1title {
-    font-size: 28px;
+    font-size: 24px;
     font-weight: 700;
     letter-spacing: 4px;
     position: relative;
@@ -437,12 +437,12 @@ textarea {
 
 @media only screen and (min-width:576px) {
     .scheduler-main .-h1title {
-        font-size: 42px
+        font-size: 26px
     }
 }
 
 .scheduler-main .-titlecards {
-    font-size: 22px;
+    font-size: 18px;
     letter-spacing: 1px
 }
 
@@ -508,6 +508,10 @@ textarea {
     text-align: center
 }
 
+.card-body {
+    border: 1px solid #e7e7e7;
+}
+
 .scheduler-main .-listjobsqueue .-itemjob {
     line-height: 1.4;
     margin-bottom: 15px
@@ -557,6 +561,63 @@ textarea {
     margin: 0 10px
 }
 
+.scheduler-main .-listjobsrunning {
+    text-align: center
+}
+
+.card-body {
+    border: 1px solid #e7e7e7;
+}
+
+.scheduler-main .-listjobsrunning .-itemjob {
+    line-height: 1.4;
+    margin-bottom: 15px
+}
+
+.scheduler-main .-listjobsrunning .-itemjob:last-child {
+    margin-bottom: 0
+}
+
+.scheduler-main .-listjobsrunning .-startjob {
+    color: #007fff;
+    display: inline-block;
+    padding-left: 10px
+}
+
+.scheduler-main .-listjobsrunning .-stopjob {
+    color: #739e41;
+    display: inline-block;
+    padding-left: 10px
+}
+
+.scheduler-main .-listjobsrunning .-killjob {
+    color: #f14c4c;
+    display: inline-block;
+    padding-left: 10px
+}
+
+.scheduler-main .-listjobsrunning .-numbersecondjob {
+    font-size: 16px;
+    font-weight: 700
+}
+
+.scheduler-main .-listjobsrunning .-numberjob {
+    border: 1px solid;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: 700;
+    padding: 2px 3px
+}
+
+.scheduler-main .-listjobsrunning .-arrowjobicon {
+    margin-right: 10px;
+    transform: rotate(90deg)
+}
+
+.scheduler-main .-listjobsrunning .-minusarrowicon {
+    margin: 0 10px
+}
+
 .scheduler-main .-blocklistperson {
     margin: 20px auto;
     max-width: 215px
@@ -573,7 +634,7 @@ textarea {
 }
 
 .scheduler-main .-blocklistperson .-itempersongit .-icongithub {
-    font-size: 24px;
+    font-size: 20px;
     -webkit-transition: .3s ease-out;
     transition: .3s ease-out
 }
@@ -609,12 +670,12 @@ textarea {
 .scheduler-main .-cardscheduler {
     height: 650px;
     overflow: auto;
-    margin-bottom: 1.5rem
+    margin-bottom: 1.5rem;
 }
 
 @media only screen and (min-width:576px) {
     .scheduler-main .-cardscheduler {
-        height: 525px
+        height: 525px;
     }
 }
 
@@ -622,12 +683,12 @@ textarea {
     align-items: flex-start;
     display: flex;
     flex-wrap: wrap;
-    justify-content: space-between
+    justify-content: space-between;
 }
 
 @media only screen and (min-width:576px) {
     .scheduler-main .-cardscheduler .-subblockcard {
-        flex-wrap: nowrap
+        flex-wrap: nowrap;
     }
 }
 
