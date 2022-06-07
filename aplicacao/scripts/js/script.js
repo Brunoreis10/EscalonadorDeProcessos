@@ -94,6 +94,7 @@ function criarFila() {
 			</li>
 		</div>
 	`);
+	setScrollNaUltimaAdicionando();
 }
 
 function getImage() {
@@ -186,8 +187,10 @@ function processoRoundRobinParteDois(index) {
 		let processoEmExecucao = new TempoExecucao(processosParaExecutar[index].idProcesso, inicioTempoProcesso, tempoFinal);
 		grafico.push(processoEmExecucao);
 		$('.table-process-running').append(`<li class="-itemjob">Processo <span class="-numberjob">${processosParaExecutar[index].idProcesso}</span><span class="-startjob">executando</span></li>`);
+		setScrollNaUltimaLinhaRodando();
 		if (processosParaExecutar[index].totalClocks <= 0) {
 			$('.table-process-running').append(`<li class="-itemjob">Processo <span class="-numberjob">${processosParaExecutar[index].idProcesso}</span><span class="-stopjob">finalizou</span></li>`);
+			setScrollNaUltimaLinhaRodando();
 			processoRoundRobinParteDois(index + 1);
 			return index;
 		}
@@ -229,8 +232,10 @@ function processoFIFOParteDois(index) {
 		grafico.push(processoEmExecucao);
 		processosParaExecutar[index].totalClocks = processosParaExecutar[index].totalClocks - intervaloDeTempo;
 		$('.table-process-running').append(`<li class="-itemjob">Processo <span class="-numberjob">${processosParaExecutar[index].idProcesso}</span><span class="-startjob">executando</span></li>`);
+		setScrollNaUltimaLinhaRodando();
 		if (processosParaExecutar[index].totalClocks <= 0) {
 			$('.table-process-running').append(`<li class="-itemjob">Processo <span class="-numberjob">${processosParaExecutar[index].idProcesso}</span><span class="-stopjob">finalizou</span></li>`);
+			setScrollNaUltimaLinhaRodando();
 			index++;
 		}
 		processoFIFOParteDois(index);
@@ -262,10 +267,10 @@ function processoTempoRealParte2(index) {
 		grafico.push(processoEmExecucao);
 		processosParaExecutar[index].totalClocks = processosParaExecutar[index].totalClocks - intervaloDeTempo;
 		$('.table-process-running').append(`<li class="-itemjob">Processo <span class="-numberjob">${processosParaExecutar[index].idProcesso}</span><span class="-startjob">executando</span></li>`);
-		$('.table-process-running').attr({scrollTop: $('.table-process-running').attr('scrollHeight')});
+		setScrollNaUltimaLinhaRodando();
 		if (processosParaExecutar[index].totalClocks <= 0) {
 			$('.table-process-running').append(`<li class="-itemjob">Processo <span class="-numberjob">${processosParaExecutar[index].idProcesso}</span><span class="-stopjob">finalizou</span></li>`);
-			$('.table-process-running').attr({scrollTop: $('.table-process-running').attr('scrollHeight')});
+			setScrollNaUltimaLinhaRodando();
 			index++;
 		}
 		processoTempoRealParte2(index);
@@ -297,8 +302,10 @@ function processoSJFParte2(index) {
 		grafico.push(processoEmExecucao);
 		processosParaExecutar[index].totalClocks = processosParaExecutar[index].totalClocks - intervaloDeTempo;
 		$('.table-process-running').append(`<li class="-itemjob">Processo <span class="-numberjob">${processosParaExecutar[index].idProcesso}</span><span class="-startjob">executando</span></li>`);
+		setScrollNaUltimaLinhaRodando();
 		if (processosParaExecutar[index].totalClocks <= 0) {
 			$('.table-process-running').append(`<li class="-itemjob">Processo <span class="-numberjob">${processosParaExecutar[index].idProcesso}</span><span class="-stopjob">finalizou</span></li>`);
+			setScrollNaUltimaLinhaRodando();
 			index++;
 		}
 		processoSJFParte2(index);
@@ -380,8 +387,10 @@ function processoPrioridadeParte2(index) {
 		grafico.push(processoEmExecucao);
 		processosParaExecutar[index].totalClocks = processosParaExecutar[index].totalClocks - intervaloDeTempo;
 		$('.table-process-running').append(`<li class="-itemjob">Processo <span class="-numberjob">${processosParaExecutar[index].idProcesso}</span><span class="-startjob">executando</span></li>`);
+		setScrollNaUltimaLinhaRodando();
 		if (processosParaExecutar[index].totalClocks <= 0) {
 			$('.table-process-running').append(`<li class="-itemjob">Processo <span class="-numberjob">${processosParaExecutar[index].idProcesso}</span><span class="-stopjob">finalizou</span></li>`);
+			setScrollNaUltimaLinhaRodando();
 			processosParaExecutar[index].executado = true;
 			processosFinalizados.push(index);
 			index++;
@@ -422,6 +431,7 @@ function compararTempo(processoA, processoB) {
 	return 0;
 }
 
+//Desenha o gráfico em tela conforme os valores.
 function desenharGrafico() {
 	let container = document.getElementById('chartTime');
 	let chart = new google.visualization.Timeline(container);
@@ -446,6 +456,8 @@ function desenharGrafico() {
 
 	chart.draw(dataTable, options);
 }
+
+//Mostra mensagens padrão em tela.
 function executaMensagemTela(msg, txtColor = null) {
 	$('#toast-place').append(`
 		<div role="alert" aria-live="assertive" aria-atomic="true" data-autohide="true" class="toast" data-delay="2000">
@@ -463,6 +475,8 @@ function executaMensagemTela(msg, txtColor = null) {
 		$(e.currentTarget).remove();
 	});
 }
+
+//Calcula o tempo de cada processo.
 function calculo() {
 	for (let a = 0; a < processosParaCalcular.length; a++) {
 		$('#calculo table tbody').empty();
@@ -482,6 +496,7 @@ function calculo() {
 	processosParaCalcular = [];
 }
 
+//Desenha os valores de tempo em tela em uma tabela para verificação.
 function desenharCalculoEmTela() {
 	for (let a = 0; a < processosParaCalcular.length; a++) {
 		$('#calculo table tbody').append(`
@@ -493,6 +508,7 @@ function desenharCalculoEmTela() {
 	}
 }
 
+//Limpa o escalonador e as tabelas.
 function limparEscalonador() {
 	$('#cleanScheduler').on('click', function () {
 		id = 1;
@@ -519,6 +535,7 @@ function limparEscalonador() {
 	});
 }
 
+//Desativa o formulário para evitar que o usuário insira algo em execução.
 function desativarFormulario(item) {
 	switch (item) {
 		case 'disable':
@@ -562,4 +579,15 @@ function getImagem() {
 	} else if (random == 5) {
 		return "aplicacao/images/iconDiscord.png";
 	}
+}
+
+//Joga o scroll para baixo, para o usuário não precisar abaixar.
+function setScrollNaUltimaLinhaRodando() {
+	const objScrDiv = document.getElementById('proc-running');
+	objScrDiv.scrollTop = objScrDiv.scrollHeight;
+}
+
+function setScrollNaUltimaAdicionando() {
+	const objScrDiv = document.getElementById('proc-exec');
+	objScrDiv.scrollTop = objScrDiv.scrollHeight;
 }
