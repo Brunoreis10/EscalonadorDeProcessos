@@ -262,8 +262,10 @@ function processoTempoRealParte2(index) {
 		grafico.push(processoEmExecucao);
 		processosParaExecutar[index].totalClocks = processosParaExecutar[index].totalClocks - intervaloDeTempo;
 		$('.table-process-running').append(`<li class="-itemjob">Processo <span class="-numberjob">${processosParaExecutar[index].idProcesso}</span><span class="-startjob">executando</span></li>`);
+		$('.table-process-running').attr({scrollTop: $('.table-process-running').attr('scrollHeight')});
 		if (processosParaExecutar[index].totalClocks <= 0) {
 			$('.table-process-running').append(`<li class="-itemjob">Processo <span class="-numberjob">${processosParaExecutar[index].idProcesso}</span><span class="-stopjob">finalizou</span></li>`);
+			$('.table-process-running').attr({scrollTop: $('.table-process-running').attr('scrollHeight')});
 			index++;
 		}
 		processoTempoRealParte2(index);
@@ -505,6 +507,7 @@ function limparEscalonador() {
 		contadorBaixa = 0;
 		contadorMuitoBaixa = 0;
 		$('.table-logs').html("");
+		$('.table-process-running').html("");
 		$('#schTimeExecution').val("");
 		$('#timeSlice').val("");
 		$('#sectionGraphic').hide();
