@@ -87,7 +87,7 @@ function criarFila() {
 	$('.table-logs').append(`
 		<div id="divImages" style="display:flex; flex-direction:row; margin-bottom:10px; justify-content:center; align-items:center">
 		<img src=" ` + imagem + `" id="image" style="margin-right:10px" width=25 height=25>
-			<li class="-itemjob">
+			<li class="-itemjobAdd">
 				Processo <span class="-numberjob">${novoProcesso.idProcesso}</span> adicionado a fila
 				<i class="fas fa-minus -minusarrowicon"></i>
 				Total de execução: <span class="-numbersecondjob">${novoProcesso.totalClocks}</span> Hz
@@ -95,6 +95,28 @@ function criarFila() {
 		</div>
 	`);
 	setScrollNaUltimaAdicionando();
+}
+
+function setColorPelaEtapa(etapa, idProcesso) {
+	if (etapa == 'EXECUTANDO') {
+		let processosAdicionados = document.getElementsByClassName('-itemjobAdd');
+		for (let i = 0; i < processosParaExecutar.length; i++) {
+			if (parseInt(processosParaExecutar[i].idProcesso) == parseInt(idProcesso)) {
+				processosAdicionados[i].style.color = '#007fff';
+			} else if (!processosParaExecutar[i].executado) {
+				processosAdicionados[i].style.color = 'black';
+			}
+		}
+	} else if (etapa == 'TERMINADO') {
+		let processosAdicionados = document.getElementsByClassName('-itemjobAdd');
+		for (let i = 0; i < processosParaExecutar.length; i++) {
+			if (parseInt(processosParaExecutar[i].idProcesso) == parseInt(idProcesso)) {
+				processosAdicionados[i].style.color = '#739e41';
+			} else if (!processosParaExecutar[i].executado) {
+				processosAdicionados[i].style.color = 'black';
+			}
+		}
+	}
 }
 
 function getImage() {
@@ -191,9 +213,12 @@ function processoRoundRobinParteDois(index) {
 		if (processosParaExecutar[index].totalClocks <= 0) {
 			$('.table-process-running').append(`<li class="-itemjob">Processo <span class="-numberjob">${processosParaExecutar[index].idProcesso}</span><span class="-stopjob">finalizou</span></li>`);
 			setScrollNaUltimaLinhaRodando();
+			processosParaExecutar[index].executado = true;
+			setColorPelaEtapa('TERMINADO', processosParaExecutar[index].idProcesso);
 			processoRoundRobinParteDois(index + 1);
 			return index;
 		}
+		setColorPelaEtapa('EXECUTANDO', processosParaExecutar[index].idProcesso);
 		processoRoundRobinParteDois(index + 1);
 	}, 1000);
 }
@@ -236,8 +261,11 @@ function processoFIFOParteDois(index) {
 		if (processosParaExecutar[index].totalClocks <= 0) {
 			$('.table-process-running').append(`<li class="-itemjob">Processo <span class="-numberjob">${processosParaExecutar[index].idProcesso}</span><span class="-stopjob">finalizou</span></li>`);
 			setScrollNaUltimaLinhaRodando();
+			processosParaExecutar[index].executado = true;
+			setColorPelaEtapa('TERMINADO', processosParaExecutar[index].idProcesso);
 			index++;
 		}
+		setColorPelaEtapa('EXECUTANDO', processosParaExecutar[index].idProcesso);
 		processoFIFOParteDois(index);
 	}, 1000);
 }
@@ -271,8 +299,11 @@ function processoTempoRealParte2(index) {
 		if (processosParaExecutar[index].totalClocks <= 0) {
 			$('.table-process-running').append(`<li class="-itemjob">Processo <span class="-numberjob">${processosParaExecutar[index].idProcesso}</span><span class="-stopjob">finalizou</span></li>`);
 			setScrollNaUltimaLinhaRodando();
+			processosParaExecutar[index].executado = true;
+			setColorPelaEtapa('TERMINADO', processosParaExecutar[index].idProcesso);
 			index++;
 		}
+		setColorPelaEtapa('EXECUTANDO', processosParaExecutar[index].idProcesso);
 		processoTempoRealParte2(index);
 	}, 1000);
 }
@@ -306,8 +337,11 @@ function processoSJFParte2(index) {
 		if (processosParaExecutar[index].totalClocks <= 0) {
 			$('.table-process-running').append(`<li class="-itemjob">Processo <span class="-numberjob">${processosParaExecutar[index].idProcesso}</span><span class="-stopjob">finalizou</span></li>`);
 			setScrollNaUltimaLinhaRodando();
+			processosParaExecutar[index].executado = true;
+			setColorPelaEtapa('TERMINADO', processosParaExecutar[index].idProcesso);
 			index++;
 		}
+		setColorPelaEtapa('EXECUTANDO', processosParaExecutar[index].idProcesso);
 		processoSJFParte2(index);
 	}, 1000);
 }
@@ -393,8 +427,10 @@ function processoPrioridadeParte2(index) {
 			setScrollNaUltimaLinhaRodando();
 			processosParaExecutar[index].executado = true;
 			processosFinalizados.push(index);
+			setColorPelaEtapa('TERMINADO', processosParaExecutar[index].idProcesso);
 			index++;
 		}
+		setColorPelaEtapa('EXECUTANDO', processosParaExecutar[index].idProcesso);
 		processoPrioridadeParte2(index);
 	}, 1000);
 }

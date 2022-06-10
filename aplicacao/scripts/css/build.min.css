@@ -521,6 +521,15 @@ textarea {
     margin-bottom: 0
 }
 
+.scheduler-main .-listjobsqueue .-itemjobAdd {
+    line-height: 1.4;
+    margin-bottom: 15px
+}
+
+.scheduler-main .-listjobsqueue .-itemjobAdd:last-child {
+    margin-bottom: 0
+}
+
 .scheduler-main .-listjobsqueue .-startjob {
     color: #007fff;
     display: inline-block;
@@ -575,6 +584,15 @@ textarea {
 }
 
 .scheduler-main .-listjobsrunning .-itemjob:last-child {
+    margin-bottom: 0
+}
+
+.scheduler-main .-listjobsrunning .-itemjobAdd {
+    line-height: 1.4;
+    margin-bottom: 15px
+}
+
+.scheduler-main .-listjobsrunning .-itemjobAdd:last-child {
     margin-bottom: 0
 }
 
