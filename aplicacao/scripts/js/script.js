@@ -452,17 +452,17 @@ function criarGrafico() {
 }
 
 function compararPrioridade(processoA, processoB) {
-	if (processoA.prioridade < processoB.prioridade)
+	if (parseInt(processoA.prioridade) < parseInt(processoB.prioridade))
 		return 1;
-	if (processoA.prioridade > processoB.prioridade)
+	if (parseInt(processoA.prioridade) > parseInt(processoB.prioridade))
 		return -1;
 	return 0;
 }
 
 function compararTempo(processoA, processoB) {
-	if (processoA.totalClocks < processoB.totalClocks)
+	if (parseInt(processoA.totalClocks) < parseInt(processoB.totalClocks))
 		return -1;
-	if (processoA.totalClocks > processoB.totalClocks)
+	if (parseInt(processoA.totalClocks) > parseInt(processoB.totalClocks))
 		return 1;
 	return 0;
 }
