@@ -657,6 +657,22 @@ textarea {
     transition: .3s ease-out
 }
 
+.square {
+    position: absolute;
+    right: 20px;
+    top: 20px;
+}
+
+.-iconsquare {
+    width: 20px;
+    height: auto;
+    margin-left: 5px;
+}
+
+.-iconsquare:hover {
+    opacity: 70%;
+}
+
 .scheduler-main .-blocklistperson .-itempersongit:last-child {
     margin-right: 0
 }
