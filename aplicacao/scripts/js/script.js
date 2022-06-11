@@ -29,11 +29,7 @@ let mensagens = {
 		aviso: '-textwarnning'
 	}
 }
-let contadorMuitoAlta = 0;
-let contadorAlta = 0;
-let contadorMedia = 0;
-let contadorBaixa = 0;
-let contadorMuitoBaixa = 0;
+let arrayAux = 0;
 
 //Ao executar o sistema, limpar tudo
 $(document).ready(function () {
@@ -47,6 +43,12 @@ function ProcessoEstrutura(idProcesso, totalClocks, prioridade) {
 	this.totalClocks = totalClocks;
 	this.executado = false;
 	this.prioridade = prioridade;
+	this.posicaoTela = 0;
+	this.contadorMuitoAlta = 0;
+	this.contadorAlta = 0;
+	this.contadorMedia = 0;
+	this.contadorBaixa = 0;
+	this.contadorMuitoBaixa = 0;
 }
 
 //Funções que imitam construtores de classes
@@ -166,6 +168,9 @@ function iniciarProcessos() {
 		processoRoundRobin();
 	} else if (tipoProcesso === "PRIORIDADE") {
 		processosParaExecutar.sort(compararPrioridade);
+		for (let i = 0; i < processosParaExecutar.length; i++) {
+			processosParaExecutar[i].posicaoTela = i;
+		}
 		processoPrioridade();
 	} else if (tipoProcesso === "FIFO") {
 		processoFIFO();
@@ -380,45 +385,45 @@ function processoPrioridadeParte2(index) {
 
 	setTimeout(() => {
 		if (processosParaExecutar[index].prioridade == "5") {
-			if (contadorMuitoAlta == 5) {
-				contadorMuitoAlta = 0;
+			if (processosParaExecutar[index].contadorMuitoAlta == 5) {
+				processosParaExecutar[index].contadorMuitoAlta = 0;
 				index++;
 
 				return processoPrioridadeParte2(index);
 			}
-			contadorMuitoAlta++;
+			processosParaExecutar[index].contadorMuitoAlta++;
 		} else if (processosParaExecutar[index].prioridade == "4") {
-			if (contadorAlta == 4) {
-				contadorAlta = 0;
+			if (processosParaExecutar[index].contadorAlta == 4) {
+				processosParaExecutar[index].contadorAlta = 0;
 				index++;
 
 				return processoPrioridadeParte2(index);
 			}
-			contadorAlta++;
+			processosParaExecutar[index].contadorAlta++;
 		} else if (processosParaExecutar[index].prioridade == "3") {
-			if (contadorMedia == 3) {
-				contadorMedia = 0;
+			if (processosParaExecutar[index].contadorMedia == 3) {
+				processosParaExecutar[index].contadorMedia = 0;
 				index++;
 
 				return processoPrioridadeParte2(index);
 			}
-			contadorMedia++;
+			processosParaExecutar[index].contadorMedia++;
 		} else if (processosParaExecutar[index].prioridade == "2") {
-			if (contadorBaixa == 2) {
-				contadorBaixa = 0;
+			if (processosParaExecutar[index].contadorBaixa == 2) {
+				processosParaExecutar[index].contadorBaixa = 0;
 				index++;
 
 				return processoPrioridadeParte2(index);
 			}
-			contadorBaixa++;
+			processosParaExecutar[index].contadorBaixa++;
 		} else if (processosParaExecutar[index].prioridade == "1") {
-			if (contadorMuitoBaixa == 1) {
-				contadorMuitoBaixa = 0;
+			if (processosParaExecutar[index].contadorMuitoBaixa == 1) {
+				processosParaExecutar[index].contadorMuitoBaixa = 0;
 				index++;
 
 				return processoPrioridadeParte2(index);
 			}
-			contadorMuitoBaixa++;
+			processosParaExecutar[index].contadorMuitoBaixa++;
 		}
 		tempoFinal = (new Date().getTime() - tempoInicial) / 1000;
 		let processoEmExecucao = new TempoExecucao(processosParaExecutar[index].idProcesso, inicioTempoProcesso, tempoFinal);
@@ -427,16 +432,234 @@ function processoPrioridadeParte2(index) {
 		$('.table-process-running').append(`<li class="-itemjob">Processo <span class="-numberjob">${processosParaExecutar[index].idProcesso}</span><span class="-startjob">executando</span></li>`);
 		setScrollNaUltimaLinhaRodando();
 		setColorPelaEtapa('EXECUTANDO', processosParaExecutar[index].idProcesso);
+		limparContadoresNaoUsados(processosParaExecutar[index].prioridade);
 		if (processosParaExecutar[index].totalClocks <= 0) {
 			$('.table-process-running').append(`<li class="-itemjob">Processo <span class="-numberjob">${processosParaExecutar[index].idProcesso}</span><span class="-stopjob">finalizou</span></li>`);
 			setScrollNaUltimaLinhaRodando();
 			processosParaExecutar[index].executado = true;
 			processosFinalizados.push(index);
 			setColorPelaEtapa('TERMINADO', processosParaExecutar[index].idProcesso);
-			index++;
 		}
-		processoPrioridadeParte2(index);
+
+		let indexAux = setaProcessosParalelos(processosParaExecutar[index].prioridade);
+		processoPrioridadeParte2(indexAux);
 	}, 1000);
+}
+
+function setaProcessosParalelos(prioridade) {
+	if (prioridade == "5") {
+		let indexAux = null;
+		arrayAux = processosParaExecutar.filter(function(a) {
+			return a.prioridade == "5";
+		});
+
+		for (let i = 0; i < arrayAux.length; i++) {
+			if (arrayAux[i].contadorMuitoAlta == 0 && indexAux == null) {
+				indexAux = arrayAux[i].posicaoTela;
+			}
+		}
+
+		if (indexAux == null) {
+			for (let i = 0; i < arrayAux.length; i++) {
+				if (arrayAux[i].contadorMuitoAlta == 1 && indexAux == null) {
+					indexAux = arrayAux[i].posicaoTela;
+				}
+			}	
+		}
+
+		if (indexAux == null) {
+			for (let i = 0; i < arrayAux.length; i++) {
+				if (arrayAux[i].contadorMuitoAlta == 2 && indexAux == null) {
+					indexAux = arrayAux[i].posicaoTela;
+				}
+			}	
+		}
+
+		if (indexAux == null) {
+			for (let i = 0; i < arrayAux.length; i++) {
+				if (arrayAux[i].contadorMuitoAlta == 3 && indexAux == null) {
+					indexAux = arrayAux[i].posicaoTela;
+				}
+			}	
+		}
+
+		if (indexAux == null) {
+			for (let i = 0; i < arrayAux.length; i++) {
+				if (arrayAux[i].contadorMuitoAlta == 4 && indexAux == null) {
+					indexAux = arrayAux[i].posicaoTela;
+				}
+			}	
+		}
+
+		if (indexAux == null) {
+			for (let i = 0; i < arrayAux.length; i++) {
+				if (arrayAux[i].contadorMuitoAlta == 5 && indexAux == null) {
+					indexAux = arrayAux[i].posicaoTela;
+				}
+			}	
+		}
+
+		return indexAux;
+	} else if (prioridade == "4") {
+		let indexAux = null;
+		arrayAux = processosParaExecutar.filter(function(a) {
+			return a.prioridade == "4";
+		});
+
+		for (let i = 0; i < arrayAux.length; i++) {
+			if (arrayAux[i].contadorAlta == 0 && indexAux == null) {
+				indexAux = arrayAux[i].posicaoTela;
+			}
+		}
+
+		if (indexAux == null) {
+			for (let i = 0; i < arrayAux.length; i++) {
+				if (arrayAux[i].contadorAlta == 1 && indexAux == null) {
+					indexAux = arrayAux[i].posicaoTela;
+				}
+			}	
+		}
+
+		if (indexAux == null) {
+			for (let i = 0; i < arrayAux.length; i++) {
+				if (arrayAux[i].contadorAlta == 2 && indexAux == null) {
+					indexAux = arrayAux[i].posicaoTela;
+				}
+			}	
+		}
+
+		if (indexAux == null) {
+			for (let i = 0; i < arrayAux.length; i++) {
+				if (arrayAux[i].contadorAlta == 3 && indexAux == null) {
+					indexAux = arrayAux[i].posicaoTela;
+				}
+			}	
+		}
+
+		if (indexAux == null) {
+			for (let i = 0; i < arrayAux.length; i++) {
+				if (arrayAux[i].contadorAlta == 4 && indexAux == null) {
+					indexAux = arrayAux[i].posicaoTela;
+				}
+			}	
+		}
+		return indexAux;
+	} else if (prioridade == "3") {
+		let indexAux = null;
+		arrayAux = processosParaExecutar.filter(function(a) {
+			return a.prioridade == "3";
+		});
+
+		for (let i = 0; i < arrayAux.length; i++) {
+			if (arrayAux[i].contadorMedia == 0 && indexAux == null) {
+				indexAux = arrayAux[i].posicaoTela;
+			}
+		}
+
+		if (indexAux == null) {
+			for (let i = 0; i < arrayAux.length; i++) {
+				if (arrayAux[i].contadorMedia == 1 && indexAux == null) {
+					indexAux = arrayAux[i].posicaoTela;
+				}
+			}	
+		}
+
+		if (indexAux == null) {
+			for (let i = 0; i < arrayAux.length; i++) {
+				if (arrayAux[i].contadorMedia == 2 && indexAux == null) {
+					indexAux = arrayAux[i].posicaoTela;
+				}
+			}	
+		}
+
+		if (indexAux == null) {
+			for (let i = 0; i < arrayAux.length; i++) {
+				if (arrayAux[i].contadorMedia == 3 && indexAux == null) {
+					indexAux = arrayAux[i].posicaoTela;
+				}
+			}	
+		}
+		return indexAux;
+	} else if (prioridade == "2") {
+		let indexAux = null;
+		arrayAux = processosParaExecutar.filter(function(a) {
+			return a.prioridade == "2";
+		});
+
+		for (let i = 0; i < arrayAux.length; i++) {
+			if (arrayAux[i].contadorBaixa == 0 && indexAux == null) {
+				indexAux = arrayAux[i].posicaoTela;
+			}
+		}
+
+		if (indexAux == null) {
+			for (let i = 0; i < arrayAux.length; i++) {
+				if (arrayAux[i].contadorBaixa == 1 && indexAux == null) {
+					indexAux = arrayAux[i].posicaoTela;
+				}
+			}	
+		}
+
+		if (indexAux == null) {
+			for (let i = 0; i < arrayAux.length; i++) {
+				if (arrayAux[i].contadorBaixa == 2 && indexAux == null) {
+					indexAux = arrayAux[i].posicaoTela;
+				}
+			}	
+		}
+		return indexAux;
+	} else if (prioridade == "1") {
+		let indexAux = null;
+		arrayAux = processosParaExecutar.filter(function(a) {
+			return a.prioridade == "1";
+		});
+
+		for (let i = 0; i < arrayAux.length; i++) {
+			if (arrayAux[i].contadorMuitoBaixa == 0 && indexAux == null) {
+				indexAux = arrayAux[i].posicaoTela;
+			}
+		}
+
+		if (indexAux == null) {
+			for (let i = 0; i < arrayAux.length; i++) {
+				if (arrayAux[i].contadorMuitoBaixa == 1 && indexAux == null) {
+					indexAux = arrayAux[i].posicaoTela;
+				}
+			}	
+		}
+		return indexAux;
+	}
+}
+
+function limparContadoresNaoUsados(prioridade) {
+	for (let i = 0; i < processosParaExecutar.length; i++) {
+		if (prioridade == "5") {
+			processosParaExecutar[i].contadorAlta = 0;
+			processosParaExecutar[i].contadorMedia = 0;
+			processosParaExecutar[i].contadorBaixa = 0;
+			processosParaExecutar[i].contadorMuitoBaixa = 0;
+		} else if (prioridade == "4") {
+			processosParaExecutar[i].contadorMuitoAlta = 0;
+			processosParaExecutar[i].contadorMedia = 0;
+			processosParaExecutar[i].contadorBaixa = 0;
+			processosParaExecutar[i].contadorMuitoBaixa = 0;
+		} else if (prioridade == "3") {
+			processosParaExecutar[i].contadorMuitoAlta = 0;
+			processosParaExecutar[i].contadorAlta = 0;
+			processosParaExecutar[i].contadorBaixa = 0;
+			processosParaExecutar[i].contadorMuitoBaixa = 0;
+		} else if (prioridade == "2") {
+			processosParaExecutar[i].contadorMuitoAlta = 0;
+			processosParaExecutar[i].contadorAlta = 0;
+			processosParaExecutar[i].contadorMedia = 0;
+			processosParaExecutar[i].contadorMuitoBaixa = 0;
+		} else if (prioridade == "1") {
+			processosParaExecutar[i].contadorMuitoAlta = 0;
+			processosParaExecutar[i].contadorAlta = 0;
+			processosParaExecutar[i].contadorMedia = 0;
+			processosParaExecutar[i].contadorBaixa = 0;
+		}
+	}
 }
 
 function criarGrafico() {
@@ -557,11 +780,7 @@ function limparEscalonador() {
 		processosParaCalcular = [];
 		processosFinalizados = [];
 		grafico = [];
-		contadorMuitoAlta = 0;
-		contadorAlta = 0;
-		contadorMedia = 0;
-		contadorBaixa = 0;
-		contadorMuitoBaixa = 0;
+		arrayAux = 0;
 		$('.table-logs').html("");
 		$('.table-process-running').html("");
 		$('#schTimeExecution').val("");
