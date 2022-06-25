@@ -30,6 +30,7 @@ let mensagens = {
 	}
 }
 let arrayAux = 0;
+let indexIO = null;
 
 //Ao executar o sistema, limpar tudo
 $(document).ready(function () {
@@ -38,17 +39,20 @@ $(document).ready(function () {
 });
 
 //Funções que imitam construtores de classes
-function ProcessoEstrutura(idProcesso, totalClocks, prioridade) {
+function ProcessoEstrutura(idProcesso, totalClocks, prioridade, realizaIOBound) {
 	this.idProcesso = idProcesso;
 	this.totalClocks = totalClocks;
 	this.executado = false;
 	this.prioridade = prioridade;
+	this.realizaIOBound = realizaIOBound;
+	this.contadorIOBound = 0;
 	this.posicaoTela = 0;
 	this.contadorMuitoAlta = 0;
 	this.contadorAlta = 0;
 	this.contadorMedia = 0;
 	this.contadorBaixa = 0;
 	this.contadorMuitoBaixa = 0;
+	this.tempoEsperaIO = 0;
 }
 
 //Funções que imitam construtores de classes
@@ -68,7 +72,7 @@ function criarFila() {
 	let tempoExecucao = $('#schTimeExecution').val();
 	let prioridadeSelecionada = $('.prioritySelect').val();
 	let intervaloDeTempo = $('#timeSlice').val();
-
+	let realizaIOBound = $('#checkboxIOBound').is(":checked");
 
 	let exprRegularTempoExecucao = validarCampoNumerico(tempoExecucao);
 	let exprRegularIntervaloTempo = validarCampoNumerico(intervaloDeTempo);
@@ -79,7 +83,7 @@ function criarFila() {
 		return;
 	}
 
-	let novoProcesso = new ProcessoEstrutura(id, tempoExecucao, prioridadeSelecionada);
+	let novoProcesso = new ProcessoEstrutura(id, tempoExecucao, prioridadeSelecionada, realizaIOBound);
 	processosParaExecutar.push(novoProcesso);
 	processosParaCalcular.push(novoProcesso);
 	id++;
@@ -93,12 +97,32 @@ function criarFila() {
 				Processo <span class="-numberjob">${novoProcesso.idProcesso}</span> adicionado a fila
 				<i class="fas fa-minus -minusarrowicon"></i>
 				Total de execução: <span class="-numbersecondjob">${novoProcesso.totalClocks}</span> Hz
+				<i class="fas fa-minus -minusarrowicon"></i>
+				${getNomePrioridade(prioridadeSelecionada)}
+				${realizaIOBound == true ? '<i class="fas fa-minus -minusarrowicon"></i> IO' : ''}
 			</li>
 		</div>
 	`);
 	setScrollNaUltimaAdicionando();
 }
 
+//Recebe o nome da prioridade para converter para letras.
+function getNomePrioridade(id) {
+	switch(id.toString()) {
+		case "1":
+			return "MB";
+		case "2":
+			return "B";
+		case "3":
+			return "M";
+		case "4":
+			return "A";
+		case "5":
+			return "MA";
+	}
+}
+
+//Defina a cor dos processos em tela conforme o que estiver executando.
 function setColorPelaEtapa(etapa, idProcesso) {
 	if (etapa == 'EXECUTANDO') {
 		let nomeClasse = '-itemjobAdd' + idProcesso;
@@ -106,9 +130,9 @@ function setColorPelaEtapa(etapa, idProcesso) {
 			if ($('#divImages li')[i].className == nomeClasse) {
 				$('#divImages li')[i].style.color = '#007fff';
 			} else {
-				if ($('#divImages li')[i].style.color != 'rgb(115, 158, 65)') {
-				 	$('#divImages li')[i].style.color = 'black';
-			 	}
+				if ($('#divImages li')[i].style.color != 'rgb(115, 158, 65)' && $('#divImages li')[i].style.color != 'orange') {
+					$('#divImages li')[i].style.color = 'black';
+				}
 			}
 		}
 	} else if (etapa == 'TERMINADO') {
@@ -117,30 +141,18 @@ function setColorPelaEtapa(etapa, idProcesso) {
 			if ($('#divImages li')[i].className == nomeClasse) {
 				$('#divImages li')[i].style.color = '#739e41';
 			} else {
-				if ($('#divImages li')[i].style.color != 'rgb(115, 158, 65)') {
+				if ($('#divImages li')[i].style.color != 'rgb(115, 158, 65)' && $('#divImages li')[i].style.color != 'orange') {
 					$('#divImages li')[i].style.color = 'black';
 				}
 			}
 		}
-	}
-}
-
-function getImage() {
-	//Sortear número de 0 a 6 para com base neles, jogar em tela o processo com seu ícone aleatório.
-	let random = getRandom(6);
-
-	if (random == 0) {
-		return "aplicacao/images/iconExcel.png";
-	} else if (random == 1) {
-		return "aplicacao/images/iconOneNote.png";
-	} else if (random == 2) {
-		return "aplicacao/images/iconPowerPoint.png";
-	} else if (random == 3) {
-		return "aplicacao/images/iconWord.png";
-	} else if (random == 4) {
-		return "aplicacao/images/iconSteam.png";
-	} else if (random == 5) {
-		return "aplicacao/images/iconDiscord.png";
+	} else if (etapa == 'EMIOBOUND') {
+		let nomeClasse = '-itemjobAdd' + idProcesso;
+		for (let i = 0; i < $('#divImages li').length; i++) {
+			if ($('#divImages li')[i].className == nomeClasse) {
+				$('#divImages li')[i].style.color = 'orange';
+			}
+		}
 	}
 }
 
@@ -164,204 +176,30 @@ function iniciarProcessos() {
 	executaMensagemTela(mensagens.alert.executandoProcessos, mensagens.color.sucesso);
 	$('.table-process-running').append(`<li class="-itemjob"><p>Tipo de Escalonamento escolhido: <span class="-numbersecondjob">${tipoProcesso}</span></p></li>`);
 
+	setaTempoIOBound();
+
 	if (tipoProcesso === "RRS") {
-		processoRoundRobin();
+		processoRoundRobin(0);
 	} else if (tipoProcesso === "PRIORIDADE") {
 		processosParaExecutar.sort(compararPrioridade);
 		for (let i = 0; i < processosParaExecutar.length; i++) {
 			processosParaExecutar[i].posicaoTela = i;
 		}
-		processoPrioridade();
+		processoPrioridade(0);
 	} else if (tipoProcesso === "FIFO") {
-		processoFIFO();
+		processoFIFO(0);
 	} else if (tipoProcesso === "TEMPOREAL") {
 		processosParaExecutar.sort(compararPrioridade);
-		processoTempoReal();
+		processoTempoReal(0);
 	} else if (tipoProcesso === "SJF") {
 		processosParaExecutar.sort(compararTempo);
-		processoSJF();
+		processoSJF(0);
 	}
 }
 
-function processoRoundRobin() {
+//Realiza o escalonamento por Round Robin, é um escalonamento circular, executa em ordem.
+function processoRoundRobin(index) {
 	tempoInicial = new Date().getTime();
-	processoRoundRobinParteDois(0);
-}
-
-function processoRoundRobinParteDois(index) {
-	//Verifica se têm jobs em execução, caso tenha, continua.
-	if (!verificaProcessos()) {
-		return index;
-	}
-
-	if (index >= processosParaExecutar.length) {
-		index = 0;
-	}
-
-	if (processosParaExecutar[index].totalClocks <= 0) {
-		processoRoundRobinParteDois(index + 1);
-		return index;
-	}
-
-	if ((processosParaExecutar[index].totalClocks / intervaloDeTempo) > 30) {
-		executaMensagemTela(`Sistema encerrou o processo ${processosParaExecutar[index].idProcesso} por ser muito grande`, mensagens.color.erro);
-		processosParaExecutar.shift();
-		processoRoundRobinParteDois(index);
-		return;
-	}
-
-	inicioTempoProcesso = (new Date().getTime() - tempoInicial) / 1000;
-
-	setTimeout(() => {
-		processosParaExecutar[index].totalClocks = processosParaExecutar[index].totalClocks - intervaloDeTempo;
-		tempoFinal = (new Date().getTime() - tempoInicial) / 1000;
-		let processoEmExecucao = new TempoExecucao(processosParaExecutar[index].idProcesso, inicioTempoProcesso, tempoFinal);
-		grafico.push(processoEmExecucao);
-		$('.table-process-running').append(`<li class="-itemjob">Processo <span class="-numberjob">${processosParaExecutar[index].idProcesso}</span><span class="-startjob">executando</span></li>`);
-		setScrollNaUltimaLinhaRodando();
-		setColorPelaEtapa('EXECUTANDO', processosParaExecutar[index].idProcesso);
-		if (processosParaExecutar[index].totalClocks <= 0) {
-			$('.table-process-running').append(`<li class="-itemjob">Processo <span class="-numberjob">${processosParaExecutar[index].idProcesso}</span><span class="-stopjob">finalizou</span></li>`);
-			setScrollNaUltimaLinhaRodando();
-			processosParaExecutar[index].executado = true;
-			setColorPelaEtapa('TERMINADO', processosParaExecutar[index].idProcesso);
-			processoRoundRobinParteDois(index + 1);
-			return index;
-		}
-		processoRoundRobinParteDois(index + 1);
-	}, 1000);
-}
-
-function verificaProcessos() {
-	for (var i = 0; i < processosParaExecutar.length; i++) {
-		if (processosParaExecutar[i].totalClocks >= 0) {
-			return true;
-		}
-	}
-	return false;
-}
-
-function processoFIFO() {
-	tempoInicial = new Date().getTime();
-	processoFIFOParteDois(0);
-}
-
-function processoFIFOParteDois(index) {
-	if (index >= processosParaExecutar.length) {
-		return index;
-	}
-
-	if ((processosParaExecutar[index].totalClocks / intervaloDeTempo) > 30) {
-		executaMensagemTela(`Sistema encerrou o Processo ${processosParaExecutar[index].idProcesso} por ser muito grande`, mensagens.color.erro);
-		index++;
-		processoFIFOParteDois(index);
-		return;
-	}
-
-	inicioTempoProcesso = (new Date().getTime() - tempoInicial) / 1000;
-
-	setTimeout(() => {
-		tempoFinal = (new Date().getTime() - tempoInicial) / 1000;
-		let processoEmExecucao = new TempoExecucao(processosParaExecutar[index].idProcesso, inicioTempoProcesso, tempoFinal);
-		grafico.push(processoEmExecucao);
-		processosParaExecutar[index].totalClocks = processosParaExecutar[index].totalClocks - intervaloDeTempo;
-		$('.table-process-running').append(`<li class="-itemjob">Processo <span class="-numberjob">${processosParaExecutar[index].idProcesso}</span><span class="-startjob">executando</span></li>`);
-		setScrollNaUltimaLinhaRodando();
-		setColorPelaEtapa('EXECUTANDO', processosParaExecutar[index].idProcesso);
-		if (processosParaExecutar[index].totalClocks <= 0) {
-			$('.table-process-running').append(`<li class="-itemjob">Processo <span class="-numberjob">${processosParaExecutar[index].idProcesso}</span><span class="-stopjob">finalizou</span></li>`);
-			setScrollNaUltimaLinhaRodando();
-			processosParaExecutar[index].executado = true;
-			setColorPelaEtapa('TERMINADO', processosParaExecutar[index].idProcesso);
-			index++;
-		}
-		processoFIFOParteDois(index);
-	}, 1000);
-}
-
-function processoTempoReal() {
-	tempoInicial = new Date().getTime();
-	processoTempoRealParte2(0);
-}
-
-function processoTempoRealParte2(index) {
-	if (index >= processosParaExecutar.length) {
-		return index;
-	}
-
-	if ((processosParaExecutar[index].totalClocks / intervaloDeTempo) > 30) {
-		executaMensagemTela(`Sistema encerrou o Processo ${processosParaExecutar[index].idProcesso} por ser muito grande`, mensagens.color.erro);
-		index++;
-		processoTempoRealParte2(index);
-		return;
-	}
-
-	inicioTempoProcesso = (new Date().getTime() - tempoInicial) / 1000;
-
-	setTimeout(() => {
-		tempoFinal = (new Date().getTime() - tempoInicial) / 1000;
-		let processoEmExecucao = new TempoExecucao(processosParaExecutar[index].idProcesso, inicioTempoProcesso, tempoFinal);
-		grafico.push(processoEmExecucao);
-		processosParaExecutar[index].totalClocks = processosParaExecutar[index].totalClocks - intervaloDeTempo;
-		$('.table-process-running').append(`<li class="-itemjob">Processo <span class="-numberjob">${processosParaExecutar[index].idProcesso}</span><span class="-startjob">executando</span></li>`);
-		setScrollNaUltimaLinhaRodando();
-		setColorPelaEtapa('EXECUTANDO', processosParaExecutar[index].idProcesso);
-		if (processosParaExecutar[index].totalClocks <= 0) {
-			$('.table-process-running').append(`<li class="-itemjob">Processo <span class="-numberjob">${processosParaExecutar[index].idProcesso}</span><span class="-stopjob">finalizou</span></li>`);
-			setScrollNaUltimaLinhaRodando();
-			processosParaExecutar[index].executado = true;
-			setColorPelaEtapa('TERMINADO', processosParaExecutar[index].idProcesso);
-			index++;
-		}
-		processoTempoRealParte2(index);
-	}, 1000);
-}
-
-function processoSJF() {
-	tempoInicial = new Date().getTime();
-	processoSJFParte2(0);
-}
-
-function processoSJFParte2(index) {
-	if (index >= processosParaExecutar.length) {
-		return index;
-	}
-
-	if ((processosParaExecutar[index].totalClocks / intervaloDeTempo) > 30) {
-		executaMensagemTela(`Sistema encerrou o Processo ${processosParaExecutar[index].idProcesso} por ser muito grande`, mensagens.color.erro);
-		index++;
-		processoSJFParte2(index);
-		return;
-	}
-
-	inicioTempoProcesso = (new Date().getTime() - tempoInicial) / 1000;
-
-	setTimeout(() => {
-		tempoFinal = (new Date().getTime() - tempoInicial) / 1000;
-		let processoEmExecucao = new TempoExecucao(processosParaExecutar[index].idProcesso, inicioTempoProcesso, tempoFinal);
-		grafico.push(processoEmExecucao);
-		processosParaExecutar[index].totalClocks = processosParaExecutar[index].totalClocks - intervaloDeTempo;
-		$('.table-process-running').append(`<li class="-itemjob">Processo <span class="-numberjob">${processosParaExecutar[index].idProcesso}</span><span class="-startjob">executando</span></li>`);
-		setScrollNaUltimaLinhaRodando();
-		setColorPelaEtapa('EXECUTANDO', processosParaExecutar[index].idProcesso);
-		if (processosParaExecutar[index].totalClocks <= 0) {
-			$('.table-process-running').append(`<li class="-itemjob">Processo <span class="-numberjob">${processosParaExecutar[index].idProcesso}</span><span class="-stopjob">finalizou</span></li>`);
-			setScrollNaUltimaLinhaRodando();
-			processosParaExecutar[index].executado = true;
-			setColorPelaEtapa('TERMINADO', processosParaExecutar[index].idProcesso);
-			index++;
-		}
-		processoSJFParte2(index);
-	}, 1000);
-}
-
-function processoPrioridade() {
-	tempoInicial = new Date().getTime();
-	processoPrioridadeParte2(0);
-}
-
-function processoPrioridadeParte2(index) {
-
 	if (processosFinalizados.length == processosParaExecutar.length) {
 		return;
 	}
@@ -371,13 +209,395 @@ function processoPrioridadeParte2(index) {
 	}
 
 	if (processosParaExecutar[index].executado) {
-		return processoPrioridadeParte2(index + 1);
+		return processoRoundRobin(index + 1);
+	}
+
+	if (processosParaExecutar[index].totalClocks <= 0) {
+		processoRoundRobin(index + 1);
+		return index;
+	}
+
+	if ((processosParaExecutar[index].totalClocks / intervaloDeTempo) > 30) {
+		executaMensagemTela(`Sistema encerrou o processo ${processosParaExecutar[index].idProcesso} por ser muito grande`, mensagens.color.erro);
+		processosParaExecutar.shift();
+		processoRoundRobin(index);
+		return;
+	}
+
+	inicioTempoProcesso = (new Date().getTime() - tempoInicial) / 1000;
+
+	if (processosParaExecutar[index].realizaIOBound) {
+		setTimeout(() => {
+			tempoFinal = (new Date().getTime() - tempoInicial) / 1000;
+			let processoEmExecucao = new TempoExecucao(processosParaExecutar[index].idProcesso, inicioTempoProcesso, tempoFinal);
+			grafico.push(processoEmExecucao);
+
+			processosParaExecutar[index].tempoEsperaIO = processosParaExecutar[index].tempoEsperaIO - tempoFinal
+
+			setColorPelaEtapa('EMIOBOUND', processosParaExecutar[index].idProcesso);
+			$('.table-process-running').append(`<li class="-itemjob">Processo <span class="-numberjob">${processosParaExecutar[index].idProcesso}</span><span class="-iojob">Em I/O Bound</span></li>`);
+			setScrollNaUltimaLinhaRodando();
+
+			if (processosParaExecutar[index].tempoEsperaIO <= 0) {
+				processosParaExecutar[index].realizaIOBound = false;
+				setColorPelaEtapa('EXECUTANDO', processosParaExecutar[index].idProcesso);
+				return processoRoundRobin(index);
+			} else {
+				processosParaExecutar[index].contadorIOBound += 1;
+				index++
+				return processoRoundRobin(index);
+			}
+		}, 1000);
+	} else {
+		if (processosParaExecutar[index].contadorIOBound > 0 && !processosParaExecutar[index].realizaIOBound) {
+			setTimeout(() => {
+				processosParaExecutar[index].contadorIOBound--;
+				tempoFinal = (new Date().getTime() - tempoInicial) / 1000;
+				let processoEmExecucao = new TempoExecucao(processosParaExecutar[index].idProcesso, inicioTempoProcesso, tempoFinal);
+				grafico.push(processoEmExecucao);
+				processosParaExecutar[index].totalClocks = processosParaExecutar[index].totalClocks - intervaloDeTempo;
+				$('.table-process-running').append(`<li class="-itemjob">Processo <span class="-numberjob">${processosParaExecutar[index].idProcesso}</span><span class="-startjob">executando</span></li>`);
+				setScrollNaUltimaLinhaRodando();
+				setColorPelaEtapa('EXECUTANDO', processosParaExecutar[index].idProcesso);
+				limparContadoresNaoUsados(processosParaExecutar[index].prioridade);
+				if (processosParaExecutar[index].totalClocks <= 0) {
+					$('.table-process-running').append(`<li class="-itemjob">Processo <span class="-numberjob">${processosParaExecutar[index].idProcesso}</span><span class="-stopjob">finalizou</span></li>`);
+					setScrollNaUltimaLinhaRodando();
+					processosParaExecutar[index].executado = true;
+					processosFinalizados.push(index);
+					setColorPelaEtapa('TERMINADO', processosParaExecutar[index].idProcesso);
+					return processoRoundRobin(index++);
+				}
+				return processoRoundRobin(index);
+			}, 1000);
+		} else {
+			setTimeout(() => {
+				processosParaExecutar[index].totalClocks = processosParaExecutar[index].totalClocks - intervaloDeTempo;
+				tempoFinal = (new Date().getTime() - tempoInicial) / 1000;
+				let processoEmExecucao = new TempoExecucao(processosParaExecutar[index].idProcesso, inicioTempoProcesso, tempoFinal);
+				grafico.push(processoEmExecucao);
+				$('.table-process-running').append(`<li class="-itemjob">Processo <span class="-numberjob">${processosParaExecutar[index].idProcesso}</span><span class="-startjob">executando</span></li>`);
+				setScrollNaUltimaLinhaRodando();
+				setColorPelaEtapa('EXECUTANDO', processosParaExecutar[index].idProcesso);
+				if (processosParaExecutar[index].totalClocks <= 0) {
+					$('.table-process-running').append(`<li class="-itemjob">Processo <span class="-numberjob">${processosParaExecutar[index].idProcesso}</span><span class="-stopjob">finalizou</span></li>`);
+					setScrollNaUltimaLinhaRodando();
+					processosParaExecutar[index].executado = true;
+					setColorPelaEtapa('TERMINADO', processosParaExecutar[index].idProcesso);
+					processoRoundRobin(index + 1);
+					return index;
+				}
+				processoRoundRobin(index + 1);
+			}, 1000);
+		}
+	}
+}
+
+//Realiza o escalonamento por FIFO, o primeiro processo que entrar é o primeiro a sair.
+function processoFIFO(index) {
+	tempoInicial = new Date().getTime();
+	if (processosFinalizados.length == processosParaExecutar.length) {
+		return;
+	}
+	
+	if (index >= processosParaExecutar.length) {
+		index = 0;
+	}
+
+	if (processosParaExecutar[index].executado) {
+		return processoFIFO(index + 1);
 	}
 
 	if ((processosParaExecutar[index].totalClocks / intervaloDeTempo) > 30) {
 		executaMensagemTela(`Sistema encerrou o Processo ${processosParaExecutar[index].idProcesso} por ser muito grande`, mensagens.color.erro);
 		index++;
-		processoPrioridadeParte2(index);
+		processoFIFO(index);
+		return;
+	}
+
+	inicioTempoProcesso = (new Date().getTime() - tempoInicial) / 1000;
+
+	let verificaSeProcessosTerminouIO = validaTempoIOBound();
+
+	if (verificaSeProcessosTerminouIO != null) {
+		index = verificaSeProcessosTerminouIO;
+		indexIO = null;
+	}
+
+	if (processosParaExecutar[index].realizaIOBound) {
+		setTimeout(() => {
+			tempoFinal = (new Date().getTime() - tempoInicial) / 1000;
+			let processoEmExecucao = new TempoExecucao(processosParaExecutar[index].idProcesso, inicioTempoProcesso, tempoFinal);
+			grafico.push(processoEmExecucao);
+
+			processosParaExecutar[index].tempoEsperaIO = processosParaExecutar[index].tempoEsperaIO - tempoFinal
+
+			setColorPelaEtapa('EMIOBOUND', processosParaExecutar[index].idProcesso);
+			$('.table-process-running').append(`<li class="-itemjob">Processo <span class="-numberjob">${processosParaExecutar[index].idProcesso}</span><span class="-iojob">Em I/O Bound</span></li>`);
+			setScrollNaUltimaLinhaRodando();
+
+			if (processosParaExecutar[index].tempoEsperaIO <= 0) {
+				processosParaExecutar[index].realizaIOBound = false;
+				setColorPelaEtapa('EXECUTANDO', processosParaExecutar[index].idProcesso);
+				return processoFIFO(index);
+			} else {
+				processosParaExecutar[index].contadorIOBound += 1;
+				index++
+				return processoFIFO(index);
+			}
+		}, 1000);
+	} else {
+		if (processosParaExecutar[index].contadorIOBound > 0 && !processosParaExecutar[index].realizaIOBound) {
+			setTimeout(() => {
+				processosParaExecutar[index].contadorIOBound--;
+				tempoFinal = (new Date().getTime() - tempoInicial) / 1000;
+				let processoEmExecucao = new TempoExecucao(processosParaExecutar[index].idProcesso, inicioTempoProcesso, tempoFinal);
+				grafico.push(processoEmExecucao);
+				processosParaExecutar[index].totalClocks = processosParaExecutar[index].totalClocks - intervaloDeTempo;
+				$('.table-process-running').append(`<li class="-itemjob">Processo <span class="-numberjob">${processosParaExecutar[index].idProcesso}</span><span class="-startjob">executando</span></li>`);
+				setScrollNaUltimaLinhaRodando();
+				setColorPelaEtapa('EXECUTANDO', processosParaExecutar[index].idProcesso);
+				limparContadoresNaoUsados(processosParaExecutar[index].prioridade);
+				if (processosParaExecutar[index].totalClocks <= 0) {
+					$('.table-process-running').append(`<li class="-itemjob">Processo <span class="-numberjob">${processosParaExecutar[index].idProcesso}</span><span class="-stopjob">finalizou</span></li>`);
+					setScrollNaUltimaLinhaRodando();
+					processosParaExecutar[index].executado = true;
+					processosFinalizados.push(index);
+					setColorPelaEtapa('TERMINADO', processosParaExecutar[index].idProcesso);
+					return processoFIFO(index++);
+				}
+				return processoFIFO(index++);
+			}, 1000);
+		} else {
+			setTimeout(() => {
+				tempoFinal = (new Date().getTime() - tempoInicial) / 1000;
+				let processoEmExecucao = new TempoExecucao(processosParaExecutar[index].idProcesso, inicioTempoProcesso, tempoFinal);
+				grafico.push(processoEmExecucao);
+				processosParaExecutar[index].totalClocks = processosParaExecutar[index].totalClocks - intervaloDeTempo;
+				$('.table-process-running').append(`<li class="-itemjob">Processo <span class="-numberjob">${processosParaExecutar[index].idProcesso}</span><span class="-startjob">executando</span></li>`);
+				setScrollNaUltimaLinhaRodando();
+				setColorPelaEtapa('EXECUTANDO', processosParaExecutar[index].idProcesso);
+				if (processosParaExecutar[index].totalClocks <= 0) {
+					$('.table-process-running').append(`<li class="-itemjob">Processo <span class="-numberjob">${processosParaExecutar[index].idProcesso}</span><span class="-stopjob">finalizou</span></li>`);
+					setScrollNaUltimaLinhaRodando();
+					processosParaExecutar[index].executado = true;
+					setColorPelaEtapa('TERMINADO', processosParaExecutar[index].idProcesso);
+					index++;
+				}
+				processoFIFO(index);
+			}, 1000);
+		}
+	}
+}
+
+//Realiza o escalonamento por Tempo real, que consiste em executar os processos com maior prioridade até o final, sem métricas e sem execução paralela.
+function processoTempoReal(index) {
+	tempoInicial = new Date().getTime();
+	if (processosFinalizados.length == processosParaExecutar.length) {
+		return;
+	}
+
+	if (index >= processosParaExecutar.length) {
+		index = 0;
+	}
+
+	if (processosParaExecutar[index].executado) {
+		return processoTempoReal(index + 1);
+	}
+
+	if ((processosParaExecutar[index].totalClocks / intervaloDeTempo) > 30) {
+		executaMensagemTela(`Sistema encerrou o Processo ${processosParaExecutar[index].idProcesso} por ser muito grande`, mensagens.color.erro);
+		index++;
+		processoTempoReal(index);
+		return;
+	}
+
+	inicioTempoProcesso = (new Date().getTime() - tempoInicial) / 1000;
+
+	let verificaSeProcessosTerminouIO = validaTempoIOBound();
+
+	if (verificaSeProcessosTerminouIO != null) {
+		index = verificaSeProcessosTerminouIO;
+		indexIO = null;
+	}
+
+	if (processosParaExecutar[index].realizaIOBound) {
+		setTimeout(() => {
+			tempoFinal = (new Date().getTime() - tempoInicial) / 1000;
+			let processoEmExecucao = new TempoExecucao(processosParaExecutar[index].idProcesso, inicioTempoProcesso, tempoFinal);
+			grafico.push(processoEmExecucao);
+
+			processosParaExecutar[index].tempoEsperaIO = processosParaExecutar[index].tempoEsperaIO - tempoFinal
+
+			setColorPelaEtapa('EMIOBOUND', processosParaExecutar[index].idProcesso);
+			$('.table-process-running').append(`<li class="-itemjob">Processo <span class="-numberjob">${processosParaExecutar[index].idProcesso}</span><span class="-iojob">Em I/O Bound</span></li>`);
+			setScrollNaUltimaLinhaRodando();
+
+			if (processosParaExecutar[index].tempoEsperaIO <= 0) {
+				processosParaExecutar[index].realizaIOBound = false;
+				setColorPelaEtapa('EXECUTANDO', processosParaExecutar[index].idProcesso);
+				return processoTempoReal(index);
+			} else {
+				processosParaExecutar[index].contadorIOBound += 1;
+				index++
+				return processoTempoReal(index);
+			}
+		}, 1000);
+	} else {
+		if (processosParaExecutar[index].contadorIOBound > 0 && !processosParaExecutar[index].realizaIOBound) {
+			setTimeout(() => {
+				processosParaExecutar[index].contadorIOBound--;
+				tempoFinal = (new Date().getTime() - tempoInicial) / 1000;
+				let processoEmExecucao = new TempoExecucao(processosParaExecutar[index].idProcesso, inicioTempoProcesso, tempoFinal);
+				grafico.push(processoEmExecucao);
+				processosParaExecutar[index].totalClocks = processosParaExecutar[index].totalClocks - intervaloDeTempo;
+				$('.table-process-running').append(`<li class="-itemjob">Processo <span class="-numberjob">${processosParaExecutar[index].idProcesso}</span><span class="-startjob">executando</span></li>`);
+				setScrollNaUltimaLinhaRodando();
+				setColorPelaEtapa('EXECUTANDO', processosParaExecutar[index].idProcesso);
+				limparContadoresNaoUsados(processosParaExecutar[index].prioridade);
+				if (processosParaExecutar[index].totalClocks <= 0) {
+					$('.table-process-running').append(`<li class="-itemjob">Processo <span class="-numberjob">${processosParaExecutar[index].idProcesso}</span><span class="-stopjob">finalizou</span></li>`);
+					setScrollNaUltimaLinhaRodando();
+					processosParaExecutar[index].executado = true;
+					processosFinalizados.push(index);
+					setColorPelaEtapa('TERMINADO', processosParaExecutar[index].idProcesso);
+					return processoTempoReal(index++);
+				}
+				return processoTempoReal(index++);
+			}, 1000);
+		} else {
+			setTimeout(() => {
+				tempoFinal = (new Date().getTime() - tempoInicial) / 1000;
+				let processoEmExecucao = new TempoExecucao(processosParaExecutar[index].idProcesso, inicioTempoProcesso, tempoFinal);
+				grafico.push(processoEmExecucao);
+				processosParaExecutar[index].totalClocks = processosParaExecutar[index].totalClocks - intervaloDeTempo;
+				$('.table-process-running').append(`<li class="-itemjob">Processo <span class="-numberjob">${processosParaExecutar[index].idProcesso}</span><span class="-startjob">executando</span></li>`);
+				setScrollNaUltimaLinhaRodando();
+				setColorPelaEtapa('EXECUTANDO', processosParaExecutar[index].idProcesso);
+				if (processosParaExecutar[index].totalClocks <= 0) {
+					$('.table-process-running').append(`<li class="-itemjob">Processo <span class="-numberjob">${processosParaExecutar[index].idProcesso}</span><span class="-stopjob">finalizou</span></li>`);
+					setScrollNaUltimaLinhaRodando();
+					processosParaExecutar[index].executado = true;
+					setColorPelaEtapa('TERMINADO', processosParaExecutar[index].idProcesso);
+					index++;
+				}
+				processoTempoReal(index);
+			}, 1000);
+		}
+	}
+}
+
+//Realiza o escalonamento por SJF que consiste em executar os processos com menor tempo de execução primeiro.
+function processoSJF(index) {
+	tempoInicial = new Date().getTime();
+	if (processosFinalizados.length == processosParaExecutar.length) {
+		return;
+	}
+
+	if (index >= processosParaExecutar.length) {
+		index = 0;
+	}
+
+	if (processosParaExecutar[index].executado) {
+		return processoSJF(index + 1);
+	}
+
+	if ((processosParaExecutar[index].totalClocks / intervaloDeTempo) > 30) {
+		executaMensagemTela(`Sistema encerrou o Processo ${processosParaExecutar[index].idProcesso} por ser muito grande`, mensagens.color.erro);
+		index++;
+		processoSJF(index);
+		return;
+	}
+
+	inicioTempoProcesso = (new Date().getTime() - tempoInicial) / 1000;
+
+	if (processosParaExecutar[index].realizaIOBound) {
+		setTimeout(() => {
+			tempoFinal = (new Date().getTime() - tempoInicial) / 1000;
+			let processoEmExecucao = new TempoExecucao(processosParaExecutar[index].idProcesso, inicioTempoProcesso, tempoFinal);
+			grafico.push(processoEmExecucao);
+
+			processosParaExecutar[index].tempoEsperaIO = processosParaExecutar[index].tempoEsperaIO - tempoFinal
+
+			setColorPelaEtapa('EMIOBOUND', processosParaExecutar[index].idProcesso);
+			$('.table-process-running').append(`<li class="-itemjob">Processo <span class="-numberjob">${processosParaExecutar[index].idProcesso}</span><span class="-iojob">Em I/O Bound</span></li>`);
+			setScrollNaUltimaLinhaRodando();
+
+			if (processosParaExecutar[index].tempoEsperaIO <= 0) {
+				processosParaExecutar[index].realizaIOBound = false;
+				setColorPelaEtapa('EXECUTANDO', processosParaExecutar[index].idProcesso);
+				return processoSJF(index);
+			} else {
+				processosParaExecutar[index].contadorIOBound += 1;
+				index++
+				return processoSJF(index);
+			}
+		}, 1000);
+	} else {
+		if (processosParaExecutar[index].contadorIOBound > 0 && !processosParaExecutar[index].realizaIOBound) {
+			setTimeout(() => {
+				processosParaExecutar[index].contadorIOBound--;
+				tempoFinal = (new Date().getTime() - tempoInicial) / 1000;
+				let processoEmExecucao = new TempoExecucao(processosParaExecutar[index].idProcesso, inicioTempoProcesso, tempoFinal);
+				grafico.push(processoEmExecucao);
+				processosParaExecutar[index].totalClocks = processosParaExecutar[index].totalClocks - intervaloDeTempo;
+				$('.table-process-running').append(`<li class="-itemjob">Processo <span class="-numberjob">${processosParaExecutar[index].idProcesso}</span><span class="-startjob">executando</span></li>`);
+				setScrollNaUltimaLinhaRodando();
+				setColorPelaEtapa('EXECUTANDO', processosParaExecutar[index].idProcesso);
+				limparContadoresNaoUsados(processosParaExecutar[index].prioridade);
+				if (processosParaExecutar[index].totalClocks <= 0) {
+					$('.table-process-running').append(`<li class="-itemjob">Processo <span class="-numberjob">${processosParaExecutar[index].idProcesso}</span><span class="-stopjob">finalizou</span></li>`);
+					setScrollNaUltimaLinhaRodando();
+					processosParaExecutar[index].executado = true;
+					processosFinalizados.push(index);
+					setColorPelaEtapa('TERMINADO', processosParaExecutar[index].idProcesso);
+					return processoSJF(index++);
+				}
+				return processoSJF(index++);
+			}, 1000);
+		} else {
+			setTimeout(() => {
+				tempoFinal = (new Date().getTime() - tempoInicial) / 1000;
+				let processoEmExecucao = new TempoExecucao(processosParaExecutar[index].idProcesso, inicioTempoProcesso, tempoFinal);
+				grafico.push(processoEmExecucao);
+				processosParaExecutar[index].totalClocks = processosParaExecutar[index].totalClocks - intervaloDeTempo;
+				$('.table-process-running').append(`<li class="-itemjob">Processo <span class="-numberjob">${processosParaExecutar[index].idProcesso}</span><span class="-startjob">executando</span></li>`);
+				setScrollNaUltimaLinhaRodando();
+				setColorPelaEtapa('EXECUTANDO', processosParaExecutar[index].idProcesso);
+				if (processosParaExecutar[index].totalClocks <= 0) {
+					$('.table-process-running').append(`<li class="-itemjob">Processo <span class="-numberjob">${processosParaExecutar[index].idProcesso}</span><span class="-stopjob">finalizou</span></li>`);
+					setScrollNaUltimaLinhaRodando();
+					processosParaExecutar[index].executado = true;
+					setColorPelaEtapa('TERMINADO', processosParaExecutar[index].idProcesso);
+					index++;
+				}
+				processoSJF(index);
+			}, 1000);
+		}
+	}
+}
+
+//Realizada o escalonamento por prioridade, o processo com maior prioridade é executado primeiro conforme a métrica de escalonamento
+//Métrica de escalonamento desse sistema:
+//Muito baixo = 1 | Baixo = 2 | Médio = 3 | Alto = 4 | Muito alto = 5
+function processoPrioridade(index) {
+	tempoInicial = new Date().getTime();
+	if (processosFinalizados.length == processosParaExecutar.length) {
+		return;
+	}
+
+	if (index >= processosParaExecutar.length) {
+		index = 0;
+	}
+
+	if (processosParaExecutar[index].executado) {
+		return processoPrioridade(index + 1);
+	}
+
+	if ((processosParaExecutar[index].totalClocks / intervaloDeTempo) > 30) {
+		executaMensagemTela(`Sistema encerrou o Processo ${processosParaExecutar[index].idProcesso} por ser muito grande`, mensagens.color.erro);
+		index++;
+		processoPrioridade(index);
 		return;
 	}
 
@@ -389,7 +609,7 @@ function processoPrioridadeParte2(index) {
 				processosParaExecutar[index].contadorMuitoAlta = 0;
 				index++;
 
-				return processoPrioridadeParte2(index);
+				return processoPrioridade(index);
 			}
 			processosParaExecutar[index].contadorMuitoAlta++;
 		} else if (processosParaExecutar[index].prioridade == "4") {
@@ -397,7 +617,7 @@ function processoPrioridadeParte2(index) {
 				processosParaExecutar[index].contadorAlta = 0;
 				index++;
 
-				return processoPrioridadeParte2(index);
+				return processoPrioridade(index);
 			}
 			processosParaExecutar[index].contadorAlta++;
 		} else if (processosParaExecutar[index].prioridade == "3") {
@@ -405,7 +625,7 @@ function processoPrioridadeParte2(index) {
 				processosParaExecutar[index].contadorMedia = 0;
 				index++;
 
-				return processoPrioridadeParte2(index);
+				return processoPrioridade(index);
 			}
 			processosParaExecutar[index].contadorMedia++;
 		} else if (processosParaExecutar[index].prioridade == "2") {
@@ -413,7 +633,7 @@ function processoPrioridadeParte2(index) {
 				processosParaExecutar[index].contadorBaixa = 0;
 				index++;
 
-				return processoPrioridadeParte2(index);
+				return processoPrioridade(index);
 			}
 			processosParaExecutar[index].contadorBaixa++;
 		} else if (processosParaExecutar[index].prioridade == "1") {
@@ -421,7 +641,7 @@ function processoPrioridadeParte2(index) {
 				processosParaExecutar[index].contadorMuitoBaixa = 0;
 				index++;
 
-				return processoPrioridadeParte2(index);
+				return processoPrioridade(index);
 			}
 			processosParaExecutar[index].contadorMuitoBaixa++;
 		}
@@ -442,10 +662,17 @@ function processoPrioridadeParte2(index) {
 		}
 
 		let indexAux = setaProcessosParalelos(processosParaExecutar[index].prioridade);
-		processoPrioridadeParte2(indexAux);
+
+		if (indexAux == null) {
+			return processoPrioridade(0);
+		} else {
+			processoPrioridade(indexAux);
+		}
 	}, 1000);
 }
 
+//Realiza o processo de escalonamento de prioridade em processos paralelos.
+//Caso tenha mais de um processo com a mesma prioridade, eles devem ser executados de forma paralela, pois, possuem a mesma prioridade.
 function setaProcessosParalelos(prioridade) {
 	if (prioridade == "5") {
 		let indexAux = null;
@@ -454,14 +681,14 @@ function setaProcessosParalelos(prioridade) {
 		});
 
 		for (let i = 0; i < arrayAux.length; i++) {
-			if (arrayAux[i].contadorMuitoAlta == 0 && indexAux == null) {
+			if (arrayAux[i].contadorMuitoAlta == 0 && indexAux == null && !arrayAux[i].executado) {
 				indexAux = arrayAux[i].posicaoTela;
 			}
 		}
 
 		if (indexAux == null) {
 			for (let i = 0; i < arrayAux.length; i++) {
-				if (arrayAux[i].contadorMuitoAlta == 1 && indexAux == null) {
+				if (arrayAux[i].contadorMuitoAlta == 1 && indexAux == null && !arrayAux[i].executado) {
 					indexAux = arrayAux[i].posicaoTela;
 				}
 			}	
@@ -469,7 +696,7 @@ function setaProcessosParalelos(prioridade) {
 
 		if (indexAux == null) {
 			for (let i = 0; i < arrayAux.length; i++) {
-				if (arrayAux[i].contadorMuitoAlta == 2 && indexAux == null) {
+				if (arrayAux[i].contadorMuitoAlta == 2 && indexAux == null && !arrayAux[i].executado) {
 					indexAux = arrayAux[i].posicaoTela;
 				}
 			}	
@@ -477,7 +704,7 @@ function setaProcessosParalelos(prioridade) {
 
 		if (indexAux == null) {
 			for (let i = 0; i < arrayAux.length; i++) {
-				if (arrayAux[i].contadorMuitoAlta == 3 && indexAux == null) {
+				if (arrayAux[i].contadorMuitoAlta == 3 && indexAux == null && !arrayAux[i].executado) {
 					indexAux = arrayAux[i].posicaoTela;
 				}
 			}	
@@ -485,7 +712,7 @@ function setaProcessosParalelos(prioridade) {
 
 		if (indexAux == null) {
 			for (let i = 0; i < arrayAux.length; i++) {
-				if (arrayAux[i].contadorMuitoAlta == 4 && indexAux == null) {
+				if (arrayAux[i].contadorMuitoAlta == 4 && indexAux == null && !arrayAux[i].executado) {
 					indexAux = arrayAux[i].posicaoTela;
 				}
 			}	
@@ -493,7 +720,7 @@ function setaProcessosParalelos(prioridade) {
 
 		if (indexAux == null) {
 			for (let i = 0; i < arrayAux.length; i++) {
-				if (arrayAux[i].contadorMuitoAlta == 5 && indexAux == null) {
+				if (arrayAux[i].contadorMuitoAlta == 5 && indexAux == null && !arrayAux[i].executado) {
 					indexAux = arrayAux[i].posicaoTela;
 				}
 			}	
@@ -507,14 +734,14 @@ function setaProcessosParalelos(prioridade) {
 		});
 
 		for (let i = 0; i < arrayAux.length; i++) {
-			if (arrayAux[i].contadorAlta == 0 && indexAux == null) {
+			if (arrayAux[i].contadorAlta == 0 && indexAux == null && !arrayAux[i].executado) {
 				indexAux = arrayAux[i].posicaoTela;
 			}
 		}
 
 		if (indexAux == null) {
 			for (let i = 0; i < arrayAux.length; i++) {
-				if (arrayAux[i].contadorAlta == 1 && indexAux == null) {
+				if (arrayAux[i].contadorAlta == 1 && indexAux == null && !arrayAux[i].executado) {
 					indexAux = arrayAux[i].posicaoTela;
 				}
 			}	
@@ -522,7 +749,7 @@ function setaProcessosParalelos(prioridade) {
 
 		if (indexAux == null) {
 			for (let i = 0; i < arrayAux.length; i++) {
-				if (arrayAux[i].contadorAlta == 2 && indexAux == null) {
+				if (arrayAux[i].contadorAlta == 2 && indexAux == null && !arrayAux[i].executado) {
 					indexAux = arrayAux[i].posicaoTela;
 				}
 			}	
@@ -530,7 +757,7 @@ function setaProcessosParalelos(prioridade) {
 
 		if (indexAux == null) {
 			for (let i = 0; i < arrayAux.length; i++) {
-				if (arrayAux[i].contadorAlta == 3 && indexAux == null) {
+				if (arrayAux[i].contadorAlta == 3 && indexAux == null && !arrayAux[i].executado) {
 					indexAux = arrayAux[i].posicaoTela;
 				}
 			}	
@@ -538,7 +765,7 @@ function setaProcessosParalelos(prioridade) {
 
 		if (indexAux == null) {
 			for (let i = 0; i < arrayAux.length; i++) {
-				if (arrayAux[i].contadorAlta == 4 && indexAux == null) {
+				if (arrayAux[i].contadorAlta == 4 && indexAux == null && !arrayAux[i].executado) {
 					indexAux = arrayAux[i].posicaoTela;
 				}
 			}	
@@ -551,14 +778,14 @@ function setaProcessosParalelos(prioridade) {
 		});
 
 		for (let i = 0; i < arrayAux.length; i++) {
-			if (arrayAux[i].contadorMedia == 0 && indexAux == null) {
+			if (arrayAux[i].contadorMedia == 0 && indexAux == null && !arrayAux[i].executado) {
 				indexAux = arrayAux[i].posicaoTela;
 			}
 		}
 
 		if (indexAux == null) {
 			for (let i = 0; i < arrayAux.length; i++) {
-				if (arrayAux[i].contadorMedia == 1 && indexAux == null) {
+				if (arrayAux[i].contadorMedia == 1 && indexAux == null && !arrayAux[i].executado) {
 					indexAux = arrayAux[i].posicaoTela;
 				}
 			}	
@@ -566,7 +793,7 @@ function setaProcessosParalelos(prioridade) {
 
 		if (indexAux == null) {
 			for (let i = 0; i < arrayAux.length; i++) {
-				if (arrayAux[i].contadorMedia == 2 && indexAux == null) {
+				if (arrayAux[i].contadorMedia == 2 && indexAux == null && !arrayAux[i].executado) {
 					indexAux = arrayAux[i].posicaoTela;
 				}
 			}	
@@ -574,7 +801,7 @@ function setaProcessosParalelos(prioridade) {
 
 		if (indexAux == null) {
 			for (let i = 0; i < arrayAux.length; i++) {
-				if (arrayAux[i].contadorMedia == 3 && indexAux == null) {
+				if (arrayAux[i].contadorMedia == 3 && indexAux == null && !arrayAux[i].executado) {
 					indexAux = arrayAux[i].posicaoTela;
 				}
 			}	
@@ -587,14 +814,14 @@ function setaProcessosParalelos(prioridade) {
 		});
 
 		for (let i = 0; i < arrayAux.length; i++) {
-			if (arrayAux[i].contadorBaixa == 0 && indexAux == null) {
+			if (arrayAux[i].contadorBaixa == 0 && indexAux == null && !arrayAux[i].executado) {
 				indexAux = arrayAux[i].posicaoTela;
 			}
 		}
 
 		if (indexAux == null) {
 			for (let i = 0; i < arrayAux.length; i++) {
-				if (arrayAux[i].contadorBaixa == 1 && indexAux == null) {
+				if (arrayAux[i].contadorBaixa == 1 && indexAux == null && !arrayAux[i].executado) {
 					indexAux = arrayAux[i].posicaoTela;
 				}
 			}	
@@ -602,7 +829,7 @@ function setaProcessosParalelos(prioridade) {
 
 		if (indexAux == null) {
 			for (let i = 0; i < arrayAux.length; i++) {
-				if (arrayAux[i].contadorBaixa == 2 && indexAux == null) {
+				if (arrayAux[i].contadorBaixa == 2 && indexAux == null && !arrayAux[i].executado) {
 					indexAux = arrayAux[i].posicaoTela;
 				}
 			}	
@@ -615,14 +842,14 @@ function setaProcessosParalelos(prioridade) {
 		});
 
 		for (let i = 0; i < arrayAux.length; i++) {
-			if (arrayAux[i].contadorMuitoBaixa == 0 && indexAux == null) {
+			if (arrayAux[i].contadorMuitoBaixa == 0 && indexAux == null && !arrayAux[i].executado) {
 				indexAux = arrayAux[i].posicaoTela;
 			}
 		}
 
 		if (indexAux == null) {
 			for (let i = 0; i < arrayAux.length; i++) {
-				if (arrayAux[i].contadorMuitoBaixa == 1 && indexAux == null) {
+				if (arrayAux[i].contadorMuitoBaixa == 1 && indexAux == null && !arrayAux[i].executado) {
 					indexAux = arrayAux[i].posicaoTela;
 				}
 			}	
@@ -804,6 +1031,7 @@ function desativarFormulario(item) {
 			$('#prioritySelect').prop('disabled', true);
 			$('#typeOfProcess').prop('disabled', true);
 			$('#startJobs').prop('disabled', true);
+			$('#ioBound').prop('disabled', true);
 			break;
 		case 'enable':
 			$('#schTimeExecution').prop('disabled', false);
@@ -813,6 +1041,7 @@ function desativarFormulario(item) {
 			$('#typeOfProcess').prop('disabled', false);
 			$('#startJobs').prop('disabled', false);
 			$('#createChart').prop('disabled', false);
+			$('#ioBound').prop('disabled', false);
 			break;
 	}
 }
@@ -849,4 +1078,32 @@ function setScrollNaUltimaLinhaRodando() {
 function setScrollNaUltimaAdicionando() {
 	const objScrDiv = document.getElementById('proc-exec');
 	objScrDiv.scrollTop = objScrDiv.scrollHeight;
+}
+
+function setaTempoIOBound() {
+	for (let i = 0; i < processosParaExecutar.length; i++) {
+		if (processosParaExecutar[i].realizaIOBound) {
+			processosParaExecutar[i].tempoEsperaIO = getRandom(100);
+		}
+	}
+}
+
+//Subtrai o tempo de espera dos processos em I/O bound, caso algum deles finalize, é o próximo a ser executado.
+function validaTempoIOBound() {
+	for (let i = 0; i < processosParaExecutar.length; i++) {
+		if (processosParaExecutar[i].realizaIOBound && tempoFinal != undefined) {
+			processosParaExecutar[i].tempoEsperaIO = processosParaExecutar[i].tempoEsperaIO - tempoFinal
+		}
+
+		if (processosParaExecutar[i].realizaIOBound && processosParaExecutar[i].tempoEsperaIO <= 0) {
+			indexIO = i;
+		}
+	}
+
+	return indexIO;
+}
+
+//Não deixa ser selecionada o campo I/O bound caso o escalonador for de prioridade
+function deveEsconderIOBound(escalonador) {
+	escalonador == "PRIORIDADE" ? $('#ioBound').prop('disabled', true) : $('#ioBound').prop('disabled', false);
 }

@@ -536,6 +536,12 @@ textarea {
     padding-left: 10px
 }
 
+.scheduler-main .-listjobsqueue .-iojob {
+    color: orange;
+    display: inline-block;
+    padding-left: 10px
+}
+
 .scheduler-main .-listjobsqueue .-stopjob {
     color: #739e41;
     display: inline-block;
@@ -598,6 +604,12 @@ textarea {
 
 .scheduler-main .-listjobsrunning .-startjob {
     color: #007fff;
+    display: inline-block;
+    padding-left: 10px
+}
+
+.scheduler-main .-listjobsrunning .-iojob {
+    color: orange;
     display: inline-block;
     padding-left: 10px
 }
@@ -703,7 +715,7 @@ textarea {
 
 .scheduler-main .-cardscheduler {
     height: 650px;
-    overflow: auto;
+    overflow: hidden;
     margin-bottom: 1.5rem;
 }
 
@@ -852,4 +864,9 @@ textarea {
     top: 8%;
     width: 100%;
     z-index: 10
+}
+
+#ioBound {
+    margin-bottom: 15px;
+    margin-top: -5px;
 }
