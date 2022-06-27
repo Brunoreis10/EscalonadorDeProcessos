@@ -72,7 +72,7 @@ function criarFila() {
 	let tempoExecucao = $('#schTimeExecution').val();
 	let prioridadeSelecionada = $('.prioritySelect').val();
 	let intervaloDeTempo = $('#timeSlice').val();
-	let realizaIOBound = $('#checkboxIOBound').is(":checked");
+	let realizaIOBound = $('#ioBound').is(":checked");
 
 	let exprRegularTempoExecucao = validarCampoNumerico(tempoExecucao);
 	let exprRegularIntervaloTempo = validarCampoNumerico(intervaloDeTempo);
