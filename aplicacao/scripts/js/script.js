@@ -99,7 +99,7 @@ function criarFila() {
 				Total de execução: <span class="-numbersecondjob">${novoProcesso.totalClocks}</span> Hz
 				<i class="fas fa-minus -minusarrowicon"></i>
 				${getNomePrioridade(prioridadeSelecionada)}
-				${realizaIOBound == true ? '<i class="fas fa-minus -minusarrowicon"></i> IO' : ''}
+				${realizaIOBound == true ? '<i class="fas fa-minus -minusarrowicon"></i> IO' :  '<i class="fas fa-minus -minusarrowicon"></i> S/IO'}
 			</li>
 		</div>
 	`);
@@ -287,6 +287,10 @@ function processoRoundRobin(index) {
 					processoRoundRobin(index + 1);
 					return index;
 				}
+				let processoIOFinalizado = pegarProcessoFinalizadoIO(tempoFinal);
+				if (processoIOFinalizado != null) {
+					return processoRoundRobin(processoIOFinalizado);
+				}
 				processoRoundRobin(index + 1);
 			}, 1000);
 		}
@@ -383,6 +387,10 @@ function processoFIFO(index) {
 					processosParaExecutar[index].executado = true;
 					setColorPelaEtapa('TERMINADO', processosParaExecutar[index].idProcesso);
 					index++;
+				}
+				let processoIOFinalizado = pegarProcessoFinalizadoIO(tempoFinal);
+				if (processoIOFinalizado != null) {
+					return processoFIFO(processoIOFinalizado);
 				}
 				processoFIFO(index);
 			}, 1000);
@@ -481,6 +489,10 @@ function processoTempoReal(index) {
 					setColorPelaEtapa('TERMINADO', processosParaExecutar[index].idProcesso);
 					index++;
 				}
+				let processoIOFinalizado = pegarProcessoFinalizadoIO(tempoFinal);
+				if (processoIOFinalizado != null) {
+					return processoTempoReal(processoIOFinalizado);
+				}
 				processoTempoReal(index);
 			}, 1000);
 		}
@@ -570,6 +582,10 @@ function processoSJF(index) {
 					processosParaExecutar[index].executado = true;
 					setColorPelaEtapa('TERMINADO', processosParaExecutar[index].idProcesso);
 					index++;
+				}
+				let processoIOFinalizado = pegarProcessoFinalizadoIO(tempoFinal);
+				if (processoIOFinalizado != null) {
+					return processoSJF(processoIOFinalizado);
 				}
 				processoSJF(index);
 			}, 1000);
@@ -1106,4 +1122,19 @@ function validaTempoIOBound() {
 //Não deixa ser selecionada o campo I/O bound caso o escalonador for de prioridade
 function deveEsconderIOBound(escalonador) {
 	escalonador == "PRIORIDADE" ? $('#ioBound').prop('disabled', true) : $('#ioBound').prop('disabled', false);
+}
+
+function pegarProcessoFinalizadoIO(tempoFinal) {
+	let processoFinalizado = null;
+	for (let i = 0; i < processosParaExecutar.length; i++) {
+		if (processosParaExecutar[i].realizaIOBound) {
+			processosParaExecutar[i].tempoEsperaIO = processosParaExecutar[i].tempoEsperaIO - tempoFinal;
+			processosParaExecutar[i].contadorIOBound += 1;
+			if (processoFinalizado == null && processosParaExecutar[i].tempoEsperaIO <= 0) {
+				processoFinalizado = i;
+			}
+		}
+	}
+
+	return processoFinalizado;
 }
