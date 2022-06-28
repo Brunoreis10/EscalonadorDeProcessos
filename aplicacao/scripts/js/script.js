@@ -1024,6 +1024,7 @@ function limparEscalonador() {
 		processosFinalizados = [];
 		grafico = [];
 		arrayAux = 0;
+		indexIO = null;
 		$('.table-logs').html("");
 		$('.table-process-running').html("");
 		$('#schTimeExecution').val("");
