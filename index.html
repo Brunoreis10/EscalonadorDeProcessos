@@ -92,7 +92,8 @@
 
 								<div class="my-4">
 									<p class="-txtinput">Selecione o tipo de Escalonamento:</p>
-									<select id="typeOfProcess" onchange="deveEsconderIOBound(this.value)" class="typeOfProcess custom-select" name="typeOfProcess">
+									<select id="typeOfProcess"
+										class="typeOfProcess custom-select" name="typeOfProcess">
 										<option value="FIFO" selected>Escalonador por First-In First-Out (FIFO)</option>
 										<option value="RRS">Escalonador por Round Robin</option>
 										<option value="SJF">Escalonador por Shortest-Job-First – SJF</option>
@@ -103,7 +104,7 @@
 
 								<div>
 									<input type="checkbox" id="ioBound">
-									<label for="checkbox">Realiza I/O bound</label><br>
+									<label for="checkbox">Faz I/O</label><br>
 								</div>
 
 								<button id="createQueue" onclick="criarFila()"
@@ -129,8 +130,10 @@
 						<div id="proc-exec" class="card-body" style="overflow: auto;">
 							<h3 class="-titlecards card-title text-center mb-4">Fila de Processos</h3>
 							<div class="square">
-								<i class="fas fa-square -iconsquare" style="color: #007fff;" title="Processos Executando"></i>
-								<i class="fas fa-square -iconsquare" style="color: #739e41;" title="Processos Finalizado"></i>
+								<i class="fas fa-square -iconsquare" style="color: #007fff;"
+									title="Processos Executando"></i>
+								<i class="fas fa-square -iconsquare" style="color: #739e41;"
+									title="Processos Finalizado"></i>
 							</div>
 
 							<ul class="-listjobsqueue table-logs"></ul>
