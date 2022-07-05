@@ -298,6 +298,7 @@ function processoRoundRobin(index) {
 					$('.table-process-running').append(`<li class="-itemjob">Processo <span class="-numberjob">${processosParaExecutar[index].idProcesso}</span><span class="-stopjob">finalizou</span></li>`);
 					setScrollNaUltimaLinhaRodando();
 					processosParaExecutar[index].executado = true;
+					processosFinalizados.push(index);
 					setColorPelaEtapa('TERMINADO', processosParaExecutar[index].idProcesso);
 					processoRoundRobin(index + 1);
 					return index;
@@ -404,6 +405,7 @@ function processoFIFO(index) {
 					$('.table-process-running').append(`<li class="-itemjob">Processo <span class="-numberjob">${processosParaExecutar[index].idProcesso}</span><span class="-stopjob">finalizou</span></li>`);
 					setScrollNaUltimaLinhaRodando();
 					processosParaExecutar[index].executado = true;
+					processosFinalizados.push(index);
 					setColorPelaEtapa('TERMINADO', processosParaExecutar[index].idProcesso);
 					index++;
 				}
@@ -509,6 +511,7 @@ function processoTempoReal(index) {
 					$('.table-process-running').append(`<li class="-itemjob">Processo <span class="-numberjob">${processosParaExecutar[index].idProcesso}</span><span class="-stopjob">finalizou</span></li>`);
 					setScrollNaUltimaLinhaRodando();
 					processosParaExecutar[index].executado = true;
+					processosFinalizados.push(index);
 					setColorPelaEtapa('TERMINADO', processosParaExecutar[index].idProcesso);
 					index++;
 				}
@@ -614,6 +617,7 @@ function processoSJF(index) {
 					$('.table-process-running').append(`<li class="-itemjob">Processo <span class="-numberjob">${processosParaExecutar[index].idProcesso}</span><span class="-stopjob">finalizou</span></li>`);
 					setScrollNaUltimaLinhaRodando();
 					processosParaExecutar[index].executado = true;
+					processosFinalizados.push(index);
 					setColorPelaEtapa('TERMINADO', processosParaExecutar[index].idProcesso);
 					index++;
 				}
