@@ -182,6 +182,8 @@ function iniciarProcessos() {
 
 	setaTempoIOBound();
 
+	tempoInicial = new Date().getTime();
+
 	if (tipoProcesso === "RRS") {
 		processoRoundRobin(0);
 	} else if (tipoProcesso === "PRIORIDADE") {
@@ -203,7 +205,6 @@ function iniciarProcessos() {
 
 //Realiza o escalonamento por Round Robin, é um escalonamento circular, executa em ordem.
 function processoRoundRobin(index) {
-	tempoInicial = new Date().getTime();
 	if (processosFinalizados.length == processosParaExecutar.length) {
 		return;
 	}
@@ -315,7 +316,6 @@ function processoRoundRobin(index) {
 
 //Realiza o escalonamento por FIFO, o primeiro processo que entrar é o primeiro a sair.
 function processoFIFO(index) {
-	tempoInicial = new Date().getTime();
 	if (processosFinalizados.length == processosParaExecutar.length) {
 		return;
 	}
@@ -421,7 +421,6 @@ function processoFIFO(index) {
 
 //Realiza o escalonamento por Tempo real, que consiste em executar os processos com maior prioridade até o final, sem métricas e sem execução paralela.
 function processoTempoReal(index) {
-	tempoInicial = new Date().getTime();
 	if (processosFinalizados.length == processosParaExecutar.length) {
 		return;
 	}
@@ -527,7 +526,6 @@ function processoTempoReal(index) {
 
 //Realiza o escalonamento por SJF que consiste em executar os processos com menor tempo de execução primeiro.
 function processoSJF(index) {
-	tempoInicial = new Date().getTime();
 	if (processosFinalizados.length == processosParaExecutar.length) {
 		return;
 	}
@@ -635,7 +633,6 @@ function processoSJF(index) {
 //Métrica de escalonamento desse sistema:
 //Muito baixo = 1 | Baixo = 2 | Médio = 3 | Alto = 4 | Muito alto = 5
 function processoPrioridade(index) {
-	tempoInicial = new Date().getTime();
 	if (processosFinalizados.length == processosParaExecutar.length) {
 		return;
 	}
